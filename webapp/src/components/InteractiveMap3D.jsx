@@ -344,8 +344,22 @@ const InteractiveMap3D = () => {
           <span className="feature-tag">Park Facing</span>
         </div>
         <div className="cta-row">
-          <button className="btn-primary" id="enquireBtn">Enquire Now</button>
-          <button className="btn-secondary">📞</button>
+          <a 
+            href={`https://wa.me/919644271804?text=I'm interested in Farm ${selectedPlot ? selectedPlot.label : ''}`} 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="btn-primary"
+            style={{ textDecoration: 'none', textAlign: 'center' }}
+          >
+            Enquire Now
+          </a>
+          <a 
+            href="tel:+919644271804" 
+            className="btn-secondary"
+            style={{ textDecoration: 'none' }}
+          >
+            📞
+          </a>
         </div>
       </div>
 
