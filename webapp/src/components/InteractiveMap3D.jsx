@@ -74,15 +74,15 @@ const cleanMapData = [
 ];
 
 // Cinematic Camera Controller
-const CameraController = ({ selectedPlot, activeView }) => {
+const CameraController = ({ selectedPlot, isResetting, onResetComplete }) => {
   const { camera } = useThree();
   const controlsRef = useRef();
 
   useFrame((state, delta) => {
     if (!controlsRef.current) return;
 
-    let targetPos = new THREE.Vector3(0, 100, 50);
-    let targetLook = new THREE.Vector3(0, 0, 0);
+    let targetPos = new THREE.Vector3();
+    let targetLook = new THREE.Vector3();
 
     if (selectedPlot) {
       // Find the plot in the map data to get its center
@@ -91,20 +91,15 @@ const CameraController = ({ selectedPlot, activeView }) => {
       const cy = tempGeom.cy; 
       const plotCenter = new THREE.Vector3(cx, 0, -cy);
       
-      // Cinematic Orbit Math
       const rotationSpeed = 0.4;
-      const radius = 50; // Slightly wider for better framing
+      const radius = 50;
       const angle = state.clock.elapsedTime * rotationSpeed;
       
-      // Calculate camera position relative to the plot
       const offsetX = Math.sin(angle) * radius;
       const offsetZ = Math.cos(angle) * radius;
       targetPos.copy(plotCenter).add(new THREE.Vector3(offsetX, 35, offsetZ));
 
-      // DYNAMIC FRAMING:
-      // To push the plot UP on the screen (to avoid the bottom popup),
-      // we must look at a point shifted TOWARDS the camera.
-      const framingOffset = 18; // Increased impact
+      const framingOffset = 18;
       const lookOffset = new THREE.Vector3(
         Math.sin(angle) * framingOffset,
         0,
@@ -112,20 +107,23 @@ const CameraController = ({ selectedPlot, activeView }) => {
       );
       targetLook.copy(plotCenter).add(lookOffset);
       
-    } else {
-      switch (activeView) {
-        case 'default':
-        default:
-          targetPos.set(0, 100, 50);
-          targetLook.set(0, 0, 0);
-          break;
+      // Continuous lock for selected plot
+      camera.position.lerp(targetPos, 3 * delta);
+      controlsRef.current.target.lerp(targetLook, 3 * delta);
+    } else if (isResetting) {
+      // Return to default birds-eye view
+      targetPos.set(0, 100, 50);
+      targetLook.set(0, 0, 0);
+      
+      camera.position.lerp(targetPos, 3 * delta);
+      controlsRef.current.target.lerp(targetLook, 3 * delta);
+
+      // Check if we are close enough to stop "resetting" and allow free movement
+      if (camera.position.distanceTo(targetPos) < 0.5 && controlsRef.current.target.distanceTo(targetLook) < 0.5) {
+        onResetComplete();
       }
     }
 
-    // Smoothly interpolate camera position
-    camera.position.lerp(targetPos, 3 * delta);
-    // Smoothly interpolate controls target
-    controlsRef.current.target.lerp(targetLook, 3 * delta);
     controlsRef.current.update();
   });
 
@@ -217,11 +215,16 @@ const MapMesh = ({ polygon, isSelected, onClick }) => {
 
 const InteractiveMap3D = () => {
   const [selectedPlot, setSelectedPlot] = useState(null);
-  const [activeView, setActiveView] = useState('default');
+  const [isResetting, setIsResetting] = useState(false);
 
   const handlePlotClick = (plot) => {
     setSelectedPlot(plot);
-    setActiveView('plot');
+    setIsResetting(false);
+  };
+
+  const resetCamera = () => {
+    setSelectedPlot(null);
+    setIsResetting(true);
   };
 
   return (
@@ -276,7 +279,11 @@ const InteractiveMap3D = () => {
         <hemisphereLight args={[0x4a8a3a, 0x1a3010, 1.2]} />
 
         {/* Cinematic Camera Controller replaces standard OrbitControls */}
-        <CameraController selectedPlot={selectedPlot} activeView={activeView} />
+        <CameraController 
+          selectedPlot={selectedPlot} 
+          isResetting={isResetting} 
+          onResetComplete={() => setIsResetting(false)} 
+        />
 
         {/* Polygons */}
         <group>
@@ -299,7 +306,16 @@ const InteractiveMap3D = () => {
 
       {/* View Presets Panel */}
       <div className="view-controls">
-        <button className={`view-btn ${!selectedPlot && activeView === 'default' ? 'active' : ''}`} onClick={() => { setActiveView('default'); setSelectedPlot(null); }}>Default View</button>
+        <button 
+          className={`view-btn icon-btn ${!selectedPlot ? 'active' : ''}`} 
+          onClick={resetCamera}
+          title="Default View"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+            <polyline points="9 22 9 12 15 12 15 22" />
+          </svg>
+        </button>
       </div>
 
       {/* HTML Overlay Panel */}
@@ -312,7 +328,7 @@ const InteractiveMap3D = () => {
             </div>
             <div className="plot-status status-available" id="pStatus">Available</div>
           </div>
-          <button className="btn-close" onClick={() => setSelectedPlot(null)}>✕</button>
+          <button className="btn-close" onClick={resetCamera}>✕</button>
         </div>
         <div className="plot-price" id="pPrice">Price on Request</div>
         <div className="plot-stats">
