@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Green Acres — Luxury Farm Plots</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0d1a0e;color:#f0ead6;font-family:'DM Sans',sans-serif;overflow:hidden;height:100dvh;width:100vw;touch-action:none}
+#canvas{display:block;width:100%;height:100%}
+.header{position:fixed;top:0;left:0;right:0;padding:16px 20px 10px;background:linear-gradient(to bottom,rgba(13,26,14,.97) 60%,transparent);z-index:10;display:flex;align-items:center;justify-content:space-between}
+.logo{font-family:'Cormorant Garamond',serif;font-size:1.4rem;color:#c8d96a;letter-spacing:.03em}
+.logo span{font-style:italic;color:#f0ead6}
+.badge{background:rgba(200,217,106,.12);border:1px solid rgba(200,217,106,.35);color:#c8d96a;font-size:.65rem;font-weight:500;letter-spacing:.12em;padding:4px 10px;border-radius:20px;text-transform:uppercase}
+.hint{position:fixed;bottom:200px;left:50%;transform:translateX(-50%);background:rgba(13,26,14,.9);border:1px solid rgba(200,217,106,.22);color:rgba(240,234,214,.7);font-size:.7rem;letter-spacing:.08em;padding:7px 18px;border-radius:20px;z-index:10;pointer-events:none;transition:opacity .6s;white-space:nowrap}
+.hint.hidden{opacity:0}
+.panel{position:fixed;bottom:0;left:0;right:0;background:linear-gradient(160deg,#141f10 0%,#0d1a0e 100%);border-top:1px solid rgba(200,217,106,.22);border-radius:26px 26px 0 0;padding:10px 22px 38px;z-index:20;transform:translateY(100%);transition:transform .45s cubic-bezier(.22,1,.36,1)}
+.panel.open{transform:translateY(0)}
+.panel-drag{width:38px;height:4px;background:rgba(200,217,106,.28);border-radius:2px;margin:0 auto 16px}
+.panel-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+.plot-name{font-family:'Cormorant Garamond',serif;font-size:1.6rem;color:#f0ead6;line-height:1.1}
+.plot-status{font-size:.62rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;padding:4px 10px;border-radius:20px;margin-top:5px;display:inline-block}
+.status-available{background:rgba(200,217,106,.13);color:#c8d96a;border:1px solid rgba(200,217,106,.38)}
+.status-sold{background:rgba(180,60,60,.13);color:#e07070;border:1px solid rgba(180,60,60,.38)}
+.status-reserved{background:rgba(200,140,50,.13);color:#e0a050;border:1px solid rgba(200,140,50,.38)}
+.plot-price{font-family:'Cormorant Garamond',serif;font-size:2.1rem;color:#c8d96a;margin-bottom:14px}
+.plot-price small{font-size:.95rem;font-family:'DM Sans',sans-serif;color:rgba(200,217,106,.55);font-weight:300}
+.plot-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:14px}
+.stat-box{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:10px;text-align:center}
+.stat-val{font-family:'Cormorant Garamond',serif;font-size:1.2rem;color:#f0ead6}
+.stat-lbl{font-size:.6rem;color:rgba(240,234,214,.4);text-transform:uppercase;letter-spacing:.08em;margin-top:2px}
+.plot-features{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:18px}
+.feature-tag{background:rgba(200,217,106,.07);border:1px solid rgba(200,217,106,.2);color:rgba(200,217,106,.8);font-size:.67rem;letter-spacing:.05em;padding:4px 10px;border-radius:20px}
+.cta-row{display:flex;gap:10px}
+.btn-primary{flex:1;background:#c8d96a;color:#0d1a0e;border:none;border-radius:14px;padding:15px;font-family:'DM Sans',sans-serif;font-size:.9rem;font-weight:500;cursor:pointer}
+.btn-secondary{background:transparent;border:1px solid rgba(200,217,106,.35);color:#c8d96a;border-radius:14px;padding:15px 18px;font-size:.9rem;cursor:pointer}
+.btn-close{background:rgba(255,255,255,.06);border:none;color:rgba(240,234,214,.5);border-radius:10px;padding:7px 12px;font-size:1rem;cursor:pointer}
+.legend{position:fixed;top:70px;right:14px;background:rgba(13,26,14,.9);border:1px solid rgba(200,217,106,.16);border-radius:14px;padding:10px 14px;z-index:10;backdrop-filter:blur(6px)}
+.legend-item{display:flex;align-items:center;gap:8px;font-size:.62rem;color:rgba(240,234,214,.55);letter-spacing:.07em;text-transform:uppercase;margin-bottom:6px}
+.legend-item:last-child{margin-bottom:0}
+.legend-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+.avail-count{position:fixed;top:70px;left:14px;background:rgba(13,26,14,.9);border:1px solid rgba(200,217,106,.16);border-radius:14px;padding:10px 14px;z-index:10;backdrop-filter:blur(6px)}
+.avail-lbl{font-size:.58rem;color:rgba(240,234,214,.4);text-transform:uppercase;letter-spacing:.1em;margin-bottom:2px}
+.avail-val{font-family:'Cormorant Garamond',serif;font-size:1.2rem;color:#c8d96a}
+.controls{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);display:flex;gap:12px;z-index:10;transition:bottom .4s cubic-bezier(.22,1,.36,1)}
+.ctrl-btn{background:rgba(13,26,14,.92);border:1px solid rgba(200,217,106,.22);color:rgba(240,234,214,.7);border-radius:50%;width:46px;height:46px;font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}
+.ctrl-btn:active{background:rgba(200,217,106,.15)}
+</style>
+</head>
+<body>
+<div class="header"><div class="logo">Green <span>Acres</span></div><div class="badge">Luxury Farm Plots</div></div>
+<div class="avail-count"><div class="avail-lbl">Available</div><div class="avail-val" id="availCount">—</div></div>
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#c8d96a"></div>Available</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#e07070"></div>Sold</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#e0a050"></div>Reserved</div>
+</div>
+<div class="hint" id="hint">TAP A PLOT TO EXPLORE</div>
+<div class="controls" id="controls">
+  <button class="ctrl-btn" id="zoomOut">−</button>
+  <button class="ctrl-btn" id="resetBtn">⟳</button>
+  <button class="ctrl-btn" id="zoomIn">+</button>
+</div>
+<div class="panel" id="panel">
+  <div class="panel-drag"></div>
+  <div class="panel-header">
+    <div><div class="plot-name" id="pName">Plot A1</div><div class="plot-status status-available" id="pStatus">Available</div></div>
+    <button class="btn-close" id="panelClose">✕</button>
+  </div>
+  <div class="plot-price" id="pPrice">₹32<small>L</small></div>
+  <div class="plot-stats">
+    <div class="stat-box"><div class="stat-val" id="pArea">215</div><div class="stat-lbl">Sq. Yards</div></div>
+    <div class="stat-box"><div class="stat-val" id="pFacing">East</div><div class="stat-lbl">Facing</div></div>
+    <div class="stat-box"><div class="stat-val" id="pPlotNo">A1</div><div class="stat-lbl">Plot No.</div></div>
+  </div>
+  <div class="plot-features" id="pFeatures"></div>
+  <div class="cta-row"><button class="btn-primary" id="enquireBtn">Enquire Now</button><button class="btn-secondary">📞</button></div>
+</div>
+<canvas id="canvas"></canvas>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ── PLOT DATA ──
+const PLOTS=[
+  {id:'A1',row:0,col:0,status:'available',price:'₹32L',area:215,facing:'East', features:['Corner Plot','Road Touch','Borewell','Premium']},
+  {id:'A2',row:0,col:1,status:'sold',     price:'₹28L',area:185,facing:'East', features:['Road Touch','Greenery']},
+  {id:'A3',row:0,col:2,status:'available',price:'₹29L',area:190,facing:'East', features:['Park Facing','Borewell']},
+  {id:'A4',row:0,col:3,status:'available',price:'₹34L',area:220,facing:'East', features:['Corner Plot','Premium','Park Facing']},
+  {id:'B1',row:1,col:0,status:'reserved', price:'₹27L',area:178,facing:'West', features:['Road Touch']},
+  {id:'B2',row:1,col:1,status:'available',price:'₹25L',area:162,facing:'West', features:['Budget Friendly','Greenery']},
+  {id:'B3',row:1,col:2,status:'sold',     price:'₹26L',area:168,facing:'West', features:['Greenery']},
+  {id:'B4',row:1,col:3,status:'available',price:'₹30L',area:198,facing:'West', features:['Corner Plot','Borewell']},
+  {id:'C1',row:2,col:0,status:'available',price:'₹33L',area:208,facing:'North',features:['Premium','Road Touch','Corner Plot']},
+  {id:'C2',row:2,col:1,status:'available',price:'₹24L',area:158,facing:'North',features:['Budget Friendly']},
+  {id:'C3',row:2,col:2,status:'reserved', price:'₹26L',area:172,facing:'North',features:['Park Facing']},
+  {id:'C4',row:2,col:3,status:'sold',     price:'₹28L',area:183,facing:'North',features:['Greenery','Borewell']},
+];
+const SC={available:0x8aaa2a,sold:0xc05050,reserved:0xc09030};
+const SE={available:0x3a5808,sold:0x500808,reserved:0x503008};
+document.getElementById('availCount').textContent=PLOTS.filter(p=>p.status==='available').length+' / '+PLOTS.length;
+
+// ── RENDERER ──
+const canvas=document.getElementById('canvas');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+renderer.setSize(window.innerWidth,window.innerHeight);
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.08;
+
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x0a1509);
+scene.fog=new THREE.Fog(0x0a1509,32,70);
+
+const camera=new THREE.PerspectiveCamera(52,window.innerWidth/window.innerHeight,0.1,100);
+camera.position.set(0,16,17); camera.lookAt(0,0,0);
+
+// ── LIGHTS ──
+scene.add(new THREE.AmbientLight(0x7aaa5a,0.70));
+const sun=new THREE.DirectionalLight(0xfff3d0,2.0);
+sun.position.set(10,20,8); sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048);
+sun.shadow.camera.near=0.5; sun.shadow.camera.far=65;
+sun.shadow.camera.left=-18; sun.shadow.camera.right=18;
+sun.shadow.camera.top=18; sun.shadow.camera.bottom=-18;
+sun.shadow.bias=-0.0008; scene.add(sun);
+const fillLight=new THREE.DirectionalLight(0x3a6a8a,0.40);
+fillLight.position.set(-8,5,-10); scene.add(fillLight);
+scene.add(new THREE.HemisphereLight(0x4a8a3a,0x1a3010,0.42));
+
+// ── MATERIAL FACTORIES ──
+// Phong for architectural surfaces (walls, roof, stone) → specular highlights
+// Lambert for vegetation, ground
+const MP=(c,s=35,o={})=>new THREE.MeshPhongMaterial({color:c,shininess:s,...o});
+const ML=(c,o={})=>new THREE.MeshLambertMaterial({color:c,...o});
+
+// ── PRIMITIVE HELPERS (all add to scene) ──
+function B(w,h,d,mat,x,y,z,ry=0){
+  const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);
+  m.position.set(x,y,z); if(ry)m.rotation.y=ry;
+  m.castShadow=true; m.receiveShadow=true; scene.add(m); return m;
+}
+function C(rt,rb,h,seg,mat,x,y,z,ry=0){
+  const m=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,seg),mat);
+  m.position.set(x,y,z); if(ry)m.rotation.y=ry;
+  m.castShadow=true; scene.add(m); return m;
+}
+function S(r,seg,mat,x,y,z){
+  const m=new THREE.Mesh(new THREE.SphereGeometry(r,seg,seg),mat);
+  m.position.set(x,y,z); m.castShadow=true; scene.add(m); return m;
+}
+
+// ── GLOBAL SMOKE RINGS for animation ──
+const smokeRings=[];
+
+// ──────────────────────────────────────────────────
+// LUXURY FARMHOUSE BUILDER
+// coord conventions:
+//   cx,cz = plot center
+//   G     = plot slab top Y
+//   GF    = G+0.33  (ground floor base Y)
+//   UF    = GF+1.12 (upper floor base Y)
+//   RB    = UF+0.82 (roof base Y)
+//   FZ    = cz-0.87 (front-of-house reference Z)
+//   COL_Z = FZ-0.42 (portico column face Z, = front porch outer edge)
+// ──────────────────────────────────────────────────
+function makeFarmhouse(cx,G,cz){
+
+  // ── MATERIALS (defined per-house for colour variety potential) ──
+  const mWALL  = MP(0xF5EDD8,20);   // warm cream walls
+  const mWALL2 = MP(0xEDE0C2,15);   // slightly darker for wing returns
+  const mTRIM  = MP(0xFFFBF2,60);   // bright white trim / columns
+  const mROOF  = MP(0xB0420E,12);   // terracotta roof
+  const mROOFD = MP(0x7A2E08,10);   // dark roof ridge
+  const mSTONE = MP(0xD2BFA2,25);   // limestone
+  const mSTONE2= MP(0xBFAD90,18);   // darker stone
+  const mDOOR  = MP(0x3D1A08,30);   // mahogany door
+  const mGLASS = ML(0x8FC5D8,{transparent:true,opacity:0.74});
+  const mSHUT  = MP(0x264D14,8);    // forest-green shutters
+  const mBRICK = MP(0x9B4521,10);   // chimney brick
+  const mRAIL  = MP(0xEDE5D5,50);   // balcony railing
+  const mGOLD  = MP(0xD4A830,80);   // gold hardware
+  const mHEDGE = ML(0x2A5C18);
+  const mLAWN  = ML(0x2C6320);
+  const mPATH  = MP(0xC8B89A,18);
+  const mIRON  = MP(0x2A2A2A,60);   // wrought iron gate
+  const FC_mats= [0xFF5555,0xFFAA22,0xEEDD44,0xFF88CC,0xFF77AA].map(c=>ML(c));
+
+  // ── KEY LEVELS ──
+  const GF=G+0.33, UF=GF+1.12, RB=UF+0.82;
+
+  // ── KEY Z COORDS ──
+  const FZ=cz-0.87;       // front portico reference
+  const COL_Z=FZ-0.42;    // column / porch outer edge
+  const BACKZ=cz+0.91;    // back wall outer face
+  const FRONTWALL_Z=FZ+0.06; // main body front wall face
+
+  // ────────────────────────────────
+  // 1. BOUNDARY WALL
+  // ────────────────────────────────
+  const BW=2.14, BD=2.14, bh=0.20, bt=0.085;
+  // Front wall — two sections with gate gap in centre
+  B(1.52,bh,bt,mSTONE2, cx-0.74,G+bh/2,cz-BD);
+  B(1.52,bh,bt,mSTONE2, cx+0.74,G+bh/2,cz-BD);
+  // Back wall
+  B(BW*2+bt*2,bh,bt,mSTONE2, cx,G+bh/2,cz+BD);
+  // Side walls
+  B(bt,bh,BD*2,mSTONE2, cx-BW,G+bh/2,cz);
+  B(bt,bh,BD*2,mSTONE2, cx+BW,G+bh/2,cz);
+  // Corner pillars
+  [[-BW,-BD],[BW,-BD],[-BW,BD],[BW,BD]].forEach(([px,pz])=>{
+    B(0.18,bh*2.2,0.18,mSTONE, cx+px,G+bh*1.1,cz+pz);
+    B(0.24,0.06,0.24,mSTONE2, cx+px,G+bh*2.2+0.03,cz+pz);
+  });
+  // Gate pillars with gold ball finials
+  [-0.24,0.24].forEach(px=>{
+    B(0.17,bh*2.7,0.17,mSTONE, cx+px,G+bh*1.35,cz-BD);
+    B(0.23,0.058,0.23,mSTONE2, cx+px,G+bh*2.7+0.029,cz-BD);
+    S(0.088,10,mGOLD, cx+px,G+bh*2.7+0.092,cz-BD);
+  });
+
+  // ── WROUGHT IRON GATE BARS ──
+  const barH=bh*2.3, barY=G+barH/2+0.01;
+  for(let g=-5;g<=5;g++){
+    const bx=cx+g*0.075;
+    if(Math.abs(bx-cx)>0.20) continue; // only fill gate gap
+    B(0.022,barH,0.022,mIRON, bx,barY,cz-BD);
+    S(0.026,7,mIRON, bx,G+barH+0.026,cz-BD);
+  }
+
+  // ────────────────────────────────
+  // 2. LAWN & GARDEN
+  // ────────────────────────────────
+  const lm=new THREE.Mesh(new THREE.PlaneGeometry(BW*2-0.18,BD*2-0.18),mLAWN);
+  lm.rotation.x=-Math.PI/2; lm.position.set(cx,G+0.012,cz); lm.receiveShadow=true; scene.add(lm);
+
+  // Stone path from gate to house steps
+  const pathL=1.05; // path length (gate → steps)
+  B(0.42,0.038,pathL,mPATH, cx,G+0.020,cz-BD+0.72+pathL/2);
+  // Path kerb stones
+  B(0.04,0.055,pathL,mSTONE2, cx-0.24,G+0.028,cz-BD+0.72+pathL/2);
+  B(0.04,0.055,pathL,mSTONE2, cx+0.24,G+0.028,cz-BD+0.72+pathL/2);
+
+  // Flower beds flanking the path (in the front garden)
+  const bedZ=cz-BD+0.52;
+  [[-0.72,bedZ],[0.72,bedZ]].forEach(([fx,fz],bi)=>{
+    B(0.56,0.08,0.30,ML(0x3A5A18), cx+fx,G+0.040,fz);
+    for(let fi=0;fi<4;fi++){
+      C(0.013,0.013,0.14,5,mHEDGE, cx+fx-0.18+fi*0.12,G+0.118,fz);
+      S(0.072,8,FC_mats[(bi*4+fi)%FC_mats.length], cx+fx-0.18+fi*0.12,G+0.198,fz);
+    }
+  });
+
+  // Side hedges along boundary walls
+  [[-1.67,-0.55],[-1.67,0.22],[-1.67,1.00],[1.67,-0.55],[1.67,0.22],[1.67,1.00]].forEach(([px,pz])=>{
+    S(0.18,8,mHEDGE, cx+px,G+0.18,cz+pz);
+    S(0.12,8,ML(0x358020), cx+px,G+0.31,cz+pz);
+  });
+
+  // ────────────────────────────────
+  // 3. FOUNDATION
+  // ────────────────────────────────
+  B(2.50,0.22,2.02,mSTONE, cx,G+0.11,cz+0.05);
+  B(2.30,0.12,1.86,mSTONE2, cx,G+0.28,cz+0.05);
+
+  // ────────────────────────────────
+  // 4. GROUND FLOOR MAIN BODY
+  // ────────────────────────────────
+  B(2.10,1.12,1.72,mWALL, cx,GF+0.56,cz+0.05);
+  // Side wing returns (add depth and L-shape)
+  B(0.30,0.90,0.58,mWALL2, cx-1.05,GF+0.45,cz+0.38);
+  B(0.30,0.90,0.58,mWALL2, cx+1.05,GF+0.45,cz+0.38);
+  // GF belt course
+  B(2.12,0.060,1.74,mSTONE, cx,GF+1.12+0.030,cz+0.05);
+  // Quoins on main wall corners (relative to wall faces)
+  const QX=[cx-1.05+0.033, cx+1.05-0.033];
+  const QZ=[FRONTWALL_Z+0.033, BACKZ-0.033];
+  QX.forEach(qx=>QZ.forEach(qz=>{
+    for(let q=0;q<4;q++) B(0.07,0.10,0.19+(q%2)*0.04,mSTONE, qx,GF+0.12+q*0.25,qz);
+  }));
+
+  // ────────────────────────────────
+  // 5. PORTICO (FRONT PORCH)
+  // ────────────────────────────────
+  // Depth: from main wall front face (FRONTWALL_Z) to column face (COL_Z)
+  const porchCenterZ=(FRONTWALL_Z+COL_Z)/2; // midpoint
+  const porchDepth=FRONTWALL_Z-COL_Z;       // ≈ 0.48
+
+  // Porch floor slab
+  B(2.10,0.08,porchDepth,mSTONE2, cx,GF+0.04,porchCenterZ);
+  // Porch ceiling slab
+  B(2.10,0.08,porchDepth,mSTONE2, cx,GF+1.12+0.04,porchCenterZ);
+
+  // 4 Classical columns
+  [-0.78,-0.26,0.26,0.78].forEach(px=>{
+    B(0.14,0.07,0.14,mSTONE, cx+px,GF+0.035,COL_Z);           // plinth base
+    C(0.057,0.072,1.12,16,mTRIM, cx+px,GF+0.07+0.56,COL_Z);  // tapered shaft
+    B(0.16,0.07,0.16,mSTONE, cx+px,GF+1.12+0.035,COL_Z);      // capital
+  });
+  // Decorative entablature / pediment band
+  B(2.12,0.08,0.07,mSTONE2, cx,GF+1.12+0.13,COL_Z);
+
+  // Balustrade between outer columns
+  [[-0.78,-0.26],[0.26,0.78]].forEach(([x1,x2])=>{
+    const mid=(x1+x2)/2, span=Math.abs(x2-x1)-0.06, railH=0.56;
+    const railY=GF+0.45;
+    B(span,0.042,0.042,mRAIL, cx+mid,railY,     COL_Z);
+    B(span,0.042,0.042,mRAIL, cx+mid,railY+railH,COL_Z);
+    for(let b=1;b<=3;b++) C(0.017,0.017,railH,6,mRAIL, cx+x1+(x2-x1)*b/4,railY+railH/2,COL_Z);
+  });
+
+  // ────────────────────────────────
+  // 6. DOOR
+  // ────────────────────────────────
+  const dW=0.36, dH=0.62, DOORZ=FRONTWALL_Z;
+  B(dW,dH,0.060,mDOOR, cx,GF+dH/2+0.01,DOORZ);
+  // Door arch (half-cylinder)
+  {
+    const ag=new THREE.CylinderGeometry(dW/2,dW/2,0.060,14,1,false,0,Math.PI);
+    const am=new THREE.Mesh(ag,mDOOR);
+    am.rotation.z=Math.PI/2; am.rotation.y=Math.PI/2;
+    am.position.set(cx,GF+dH+dW/2-0.005,DOORZ); am.castShadow=true; scene.add(am);
+  }
+  // Stone door surround frame
+  B(dW+0.09,dH+0.11,0.046,mSTONE, cx,GF+dH/2+0.005,DOORZ+0.033);
+  // Raised door panels (2 columns × 2 rows)
+  [[dH*0.16],[dH*0.46]].forEach(([oy])=>{
+    B(dW*.34,dH*.26,0.064,MP(0x4A2210,12), cx-0.088,GF+oy,DOORZ+0.033);
+    B(dW*.34,dH*.26,0.064,MP(0x4A2210,12), cx+0.088,GF+oy,DOORZ+0.033);
+  });
+  S(0.034,10,mGOLD, cx+0.13,GF+0.32,DOORZ+0.054);  // door knob
+  // Fanlight (arched glass above door)
+  {
+    const fg=new THREE.Mesh(new THREE.CircleGeometry(dW/2-0.005,14),mGLASS);
+    fg.rotation.y=Math.PI; fg.position.set(cx,GF+dH+dW/2-0.005,DOORZ+0.020); scene.add(fg);
+    // Spoke crossbars
+    C(0.005,0.005,dW-0.01,4,mTRIM, cx,GF+dH+dW/2-0.005,DOORZ+0.034,0);
+    C(0.005,0.005,dW-0.01,4,mTRIM, cx,GF+dH+dW/2-0.005,DOORZ+0.034,Math.PI/2);
+  }
+  // Entry steps (wider than door, two risers)
+  B(0.70,0.072,0.24,mSTONE, cx,GF+0.036,DOORZ-0.50);
+  B(0.62,0.072,0.22,mSTONE, cx,GF+0.108,DOORZ-0.28);
+
+  // ────────────────────────────────
+  // 7. WINDOWS  — Two separate helpers for Z-facing and X-facing walls
+  // ────────────────────────────────
+
+  // Z-facing window (front or back walls).
+  // frontSide=true  → glass protrudes in -Z (front face)
+  // frontSide=false → glass protrudes in +Z (back face)
+  function WZ(wx,wy,wz,shutters=true,frontSide=true){
+    const wW=0.30, wH=0.32, wD=0.042;
+    const pDir=frontSide?-1:1;  // protrusion direction
+    const gZ=wz+pDir*0.018;     // glass face
+    const fZ=wz+pDir*0.030;     // frame face
+
+    // Glass pane
+    const wg=new THREE.Mesh(new THREE.BoxGeometry(wW,wH,wD),mGLASS);
+    wg.position.set(wx,wy,gZ); wg.castShadow=true; scene.add(wg);
+    // White trim frame
+    B(wW+0.07,wH+0.07,wD+0.02,mTRIM, wx,wy,fZ);
+    // Cross H muntin
+    B(wW+0.07,0.026,wD+0.026,mTRIM, wx,wy,fZ);
+    // Cross V muntin
+    B(0.026,wH+0.07,wD+0.026,mTRIM, wx,wy,fZ);
+    // Stone sill (proud of wall)
+    B(wW+0.16,0.044,0.09,mSTONE, wx,wy-wH/2-0.024,wz+pDir*0.040);
+    // Stone header / lintel
+    B(wW+0.09,0.058,wD+0.022,mSTONE2, wx,wy+wH/2+0.032,fZ);
+    // Green shutters (fold open against wall)
+    if(shutters){
+      const sZ=wz+pDir*0.032;
+      B(0.13,wH+0.02,0.034,mSHUT, wx-wW/2-0.076,wy,sZ);
+      B(0.13,wH+0.02,0.034,mSHUT, wx+wW/2+0.076,wy,sZ);
+      for(let l=0;l<4;l++){
+        B(0.13,0.022,0.044,MP(0x1A3A0A,5), wx-wW/2-0.076,wy-0.09+l*0.08,sZ+pDir*0.022);
+        B(0.13,0.022,0.044,MP(0x1A3A0A,5), wx+wW/2+0.076,wy-0.09+l*0.08,sZ+pDir*0.022);
+      }
+    }
+  }
+
+  // X-facing window (left or right side walls).
+  // wallSide=-1 → left wall (glass protrudes in -X)
+  // wallSide=+1 → right wall (glass protrudes in +X)
+  function WX(wx,wy,wz,wallSide,shutters=true){
+    const wW=0.30, wH=0.32, wD=0.042;
+    const pDir=wallSide;
+    const gX=wx+pDir*0.018;
+    const fX=wx+pDir*0.030;
+
+    // Glass pane (thin in X, wide in Z)
+    const wg=new THREE.Mesh(new THREE.BoxGeometry(wD,wH,wW),mGLASS);
+    wg.position.set(gX,wy,wz); wg.castShadow=true; scene.add(wg);
+    // Frame
+    B(wD+0.02,wH+0.07,wW+0.07,mTRIM, fX,wy,wz);
+    // Cross H muntin
+    B(wD+0.026,0.026,wW+0.07,mTRIM, fX,wy,wz);
+    // Cross V muntin
+    B(wD+0.026,wH+0.07,0.026,mTRIM, fX,wy,wz);
+    // Stone sill (extends in X outward)
+    B(0.09,0.044,wW+0.16,mSTONE, wx+pDir*0.044,wy-wH/2-0.024,wz);
+    // Header
+    B(wD+0.022,0.058,wW+0.09,mSTONE2, fX,wy+wH/2+0.032,wz);
+    // Shutters (fold against wall, in Z direction)
+    if(shutters){
+      const sX=wx+pDir*0.032;
+      B(0.034,wH+0.02,0.13,mSHUT, sX,wy,wz-wW/2-0.076);
+      B(0.034,wH+0.02,0.13,mSHUT, sX,wy,wz+wW/2+0.076);
+      for(let l=0;l<4;l++){
+        B(0.044,0.022,0.13,MP(0x1A3A0A,5), sX+pDir*0.022,wy-0.09+l*0.08,wz-wW/2-0.076);
+        B(0.044,0.022,0.13,MP(0x1A3A0A,5), sX+pDir*0.022,wy-0.09+l*0.08,wz+wW/2+0.076);
+      }
+    }
+  }
+
+  // ── PLACE GF WINDOWS ──
+  const wY=GF+0.63;
+  WZ(cx-0.63,wY,FRONTWALL_Z,  true, true);   // front left
+  WZ(cx+0.63,wY,FRONTWALL_Z,  true, true);   // front right
+  WZ(cx-0.40,wY,BACKZ,        false,false);   // back left
+  WZ(cx+0.40,wY,BACKZ,        false,false);   // back right
+  WX(cx-1.05,wY,cz+0.22,     -1,   true);    // side left
+  WX(cx+1.05,wY,cz+0.22,     +1,   true);    // side right
+
+  // ────────────────────────────────
+  // 8. UPPER FLOOR
+  // ────────────────────────────────
+  // Centre UF at same cz+0.05 as GF for consistency
+  const UF_HW=0.91, UF_HD=0.70; // half-width, half-depth
+  B(UF_HW*2,0.82,UF_HD*2,mWALL, cx,UF+0.41,cz+0.05);
+  // UF belt course
+  B(UF_HW*2+0.02,0.062,UF_HD*2+0.02,mSTONE, cx,UF+0.82+0.031,cz+0.05);
+
+  // ── BALCONY ──
+  // Slab spans from main UF front face (cz+0.05-UF_HD = cz-0.65) out to COL_Z
+  // So slab depth = (cz-0.65) - COL_Z = (cz-0.65) - (cz-1.29) = 0.64
+  const balconyFront=COL_Z;            // front edge of balcony at column face
+  const balconyBack =cz+0.05-UF_HD;   // back edge = UF front wall face
+  const balconyCtrZ =(balconyFront+balconyBack)/2;
+  const balconyDepth=balconyBack-balconyFront; // positive value
+
+  B(UF_HW*2,0.072,balconyDepth,mSTONE, cx,UF+0.040,balconyCtrZ);
+
+  // Railing at the front edge (COL_Z) and side returns
+  const brTop=UF+0.040+0.072/2+0.36;   // top rail Y
+  const brBot=UF+0.040+0.072/2+0.020;  // bottom rail Y
+  B(UF_HW*2,0.044,0.044,mRAIL, cx,brTop,balconyFront+0.022);    // front top
+  B(UF_HW*2,0.044,0.044,mRAIL, cx,brBot,balconyFront+0.022);    // front bottom
+  for(let b=-UF_HW+0.10;b<=UF_HW-0.09;b+=0.195)
+    C(0.017,0.017,0.35,6,mRAIL, cx+b,(brTop+brBot)/2,balconyFront+0.022);
+  // Side returns of railing
+  [-UF_HW,UF_HW].forEach(px=>{
+    B(0.044,0.35,balconyDepth,mRAIL, cx+px,(brTop+brBot)/2,balconyCtrZ);
+  });
+
+  // ── UPPER FLOOR WINDOWS ──
+  const uwY=UF+0.44;
+  const UF_frontZ=cz+0.05-UF_HD; // = cz-0.65 = front face of UF wall
+  WZ(cx-0.52,uwY,UF_frontZ, true, true);   // upper front left
+  WZ(cx+0.52,uwY,UF_frontZ, true, true);   // upper front right
+  WZ(cx,     uwY,BACKZ,     false,false);   // upper back
+  WX(cx-UF_HW,uwY,cz+0.10, -1, false);    // upper side left (no shutters, cleaner)
+  WX(cx+UF_HW,uwY,cz+0.10, +1, false);    // upper side right
+
+  // ────────────────────────────────
+  // 9. ROOFS
+  // ────────────────────────────────
+
+  // Main hip roof (4-segment cylinder = pyramid)
+  {
+    const rg=new THREE.CylinderGeometry(0.20,1.33,0.88,4);
+    const rm=new THREE.Mesh(rg,mROOF);
+    rm.position.set(cx,RB+0.44,cz+0.05); rm.rotation.y=Math.PI/4;
+    rm.castShadow=true; scene.add(rm);
+  }
+  // Ridge finial pole + sphere
+  C(0.068,0.068,0.46,12,mROOFD, cx,RB+0.88+0.23,cz+0.05);
+  S(0.090,12,mROOFD, cx,RB+0.88+0.46+0.09,cz+0.05);
+
+  // Portico / porch hip roof (covers the porch)
+  {
+    const pg=new THREE.CylinderGeometry(0.06,1.08,0.44,4);
+    const pm=new THREE.Mesh(pg,mROOF);
+    pm.position.set(cx,GF+1.12+0.22,porchCenterZ); pm.rotation.y=Math.PI/4;
+    pm.castShadow=true; scene.add(pm);
+  }
+
+  // Side wing hip roofs
+  [-1.05,1.05].forEach(px=>{
+    const sg=new THREE.CylinderGeometry(0.04,0.32,0.32,4);
+    const sm=new THREE.Mesh(sg,mROOF);
+    sm.position.set(cx+px,GF+0.90+0.16,cz+0.39); sm.rotation.y=Math.PI/4;
+    sm.castShadow=true; scene.add(sm);
+  });
+
+  // ── DORMERS (on front slope, raised to clear roof surface) ──
+  [-0.46,0.46].forEach(dx=>{
+    // Place dormer on front face of main roof, raised up
+    const dZ=cz-0.82; // in front-slope territory
+    const dY=RB+0.36; // raised well above roof base for visibility
+    // Gable wall
+    B(0.34,0.28,0.10,mWALL, cx+dx,dY+0.14,dZ);
+    // Dormer mini hip roof
+    {
+      const dg=new THREE.CylinderGeometry(0.01,0.26,0.20,4);
+      const dm=new THREE.Mesh(dg,mROOF);
+      dm.position.set(cx+dx,dY+0.38,dZ); dm.rotation.y=Math.PI/4;
+      dm.castShadow=true; scene.add(dm);
+    }
+    // Window (WZ, front-facing)
+    WZ(cx+dx,dY+0.15,dZ-0.05, false,true);
+  });
+
+  // ────────────────────────────────
+  // 10. CHIMNEY (with animated smoke)
+  // ────────────────────────────────
+  const CHX=cx+0.55, CHZ=cz+0.30;
+  B(0.21,0.92,0.21,mBRICK, CHX,RB+0.14,CHZ);
+  B(0.28,0.062,0.28,mSTONE, CHX,RB+0.64,CHZ);
+  C(0.072,0.072,0.22,12,mBRICK, CHX,RB+0.75,CHZ);
+  B(0.26,0.046,0.26,mSTONE2, CHX,RB+0.88,CHZ);
+  C(0.046,0.062,0.12,8,mBRICK, CHX,RB+0.94+0.06,CHZ); // chimney pot
+
+  // Animated smoke rings
+  const smokeBaseY=RB+0.88+0.12;
+  for(let si=0;si<4;si++){
+    const tg=new THREE.TorusGeometry(0.065-si*0.008,0.014,5,12);
+    const sm=new THREE.Mesh(tg,ML(0xCCCCCC,{transparent:true,opacity:0.32-si*0.07}));
+    sm.rotation.x=Math.PI/2;
+    sm.position.set(CHX, smokeBaseY+si*0.25, CHZ);
+    sm.userData={
+      baseY:smokeBaseY+si*0.25,
+      speed:0.004+si*0.001,
+      initOp:0.32-si*0.07,
+      range:0.80
+    };
+    scene.add(sm);
+    smokeRings.push(sm);
+  }
+
+  // ────────────────────────────────
+  // 11. ROOFTOP DETAILS
+  // ────────────────────────────────
+
+  // Water tank (cylindrical, tucked near chimney)
+  C(0.14,0.14,0.30,12,MP(0x6A8A9A,40), cx-0.55,RB+0.92,cz+0.12);
+  C(0.16,0.16,0.040,12,MP(0x5A7A8A,30), cx-0.55,RB+1.08,cz+0.12);
+
+  // Solar panels — flat near ridge, correctly angled on roof
+  // Place at a safe Y above RB+0.44 (roof midpoint height) so they sit on the slope
+  [{x:cx-0.08,z:cz+0.05},{x:cx+0.34,z:cz+0.05}].forEach(({x,z})=>{
+    B(0.44,0.044,0.34,MP(0x2A4A7A,60), x,RB+0.62,z, 0.22); // slight tilt
+    // Panel grid lines
+    B(0.44,0.048,0.008,MP(0x4A6A9A,40), x,RB+0.62,z-0.11, 0.22);
+    B(0.44,0.048,0.008,MP(0x4A6A9A,40), x,RB+0.62,z+0.05, 0.22);
+  });
+
+  // ────────────────────────────────
+  // 12. SIDE-WALL AC UNIT (hidden from front view)
+  // ────────────────────────────────
+  B(0.26,0.18,0.16,MP(0x7A8A99,30), cx-1.07,GF+0.58,cz+0.55);
+  B(0.06,0.18,0.16,MP(0x5A6A79,20), cx-1.04,GF+0.58,cz+0.55); // grille
+
+  // ────────────────────────────────
+  // 13. EXTERIOR SCONCE LIGHTS
+  // ────────────────────────────────
+  // Wall bracket
+  B(0.06,0.12,0.06,mGOLD, cx-0.80,GF+1.04,FRONTWALL_Z+0.04);
+  B(0.06,0.12,0.06,mGOLD, cx+0.80,GF+1.04,FRONTWALL_Z+0.04);
+  // Light globe (warm emissive)
+  S(0.042,8,ML(0xFFEE99,{emissive:0xFFCC55,emissiveIntensity:0.6}), cx-0.80,GF+0.93,FRONTWALL_Z+0.06);
+  S(0.042,8,ML(0xFFEE99,{emissive:0xFFCC55,emissiveIntensity:0.6}), cx+0.80,GF+0.93,FRONTWALL_Z+0.06);
+}
+
+// ── GROUND & ROADS ──
+const gnd=new THREE.Mesh(new THREE.PlaneGeometry(38,38),ML(0x183014));
+gnd.rotation.x=-Math.PI/2; gnd.receiveShadow=true; scene.add(gnd);
+
+// Roads
+[[24,1.05,0,-4.15],[24,1.05,0,1.72],[24,1.05,0,7.57],
+ [1.05,25,-5.7,0],[1.05,25,-0.02,0],[1.05,25,5.68,0],[1.05,25,11.38,0]
+].forEach(([w,d,x,z])=>{
+  const r=new THREE.Mesh(new THREE.BoxGeometry(w,0.026,d),ML(0x1C2E18));
+  r.position.set(x,0.013,z); r.receiveShadow=true; scene.add(r);
+});
+
+// Trees
+function tree(x,z,s=1){
+  const h=0.80*s;
+  C(0.07*s,0.10*s,h,6,ML(0x5C3A1A), x,h/2+0.01,z);
+  const lc=[0x3A7A2A,0x2D6020,0x4A8F35][Math.floor(Math.random()*3)];
+  C(0,0.44*s,0.92*s,8,ML(lc), x,h+0.46*s,z);
+  C(0,0.32*s,0.62*s,8,ML(lc), x,h+0.77*s,z);
+  S(0.21*s,8,ML(lc), x,h+1.01*s,z);
+}
+[-11,-11,-11,-11,-11,-11,15,15,15,15,15,15].forEach((x,i)=>
+  tree(x,[-10,-5,0,5,10,14,-10,-5,0,5,10,14][i], 0.7+Math.random()*0.45));
+[-7,-2,3,8].forEach(x=>{
+  tree(x,-12,0.7+Math.random()*0.4);
+  tree(x,15, 0.7+Math.random()*0.4);
+});
+
+// ── PLOT SLABS & HOUSES ──
+const ORIG_X=-8.55, ORIG_Z=-5.85, GAP_X=5.7, GAP_Z=5.85;
+const plotMeshes=[];
+
+PLOTS.forEach(p=>{
+  const px=ORIG_X+p.col*GAP_X, pz=ORIG_Z+p.row*GAP_Z;
+  const pm=new THREE.MeshLambertMaterial({color:SC[p.status],emissive:SE[p.status],emissiveIntensity:0.28});
+  const mesh=new THREE.Mesh(new THREE.BoxGeometry(4.65,0.21,4.65),pm);
+  mesh.position.set(px,0.105,pz);
+  mesh.castShadow=true; mesh.receiveShadow=true;
+  mesh.userData={plot:p,origY:0.105}; scene.add(mesh); plotMeshes.push(mesh);
+
+  if(p.status==='available'||p.status==='reserved'){
+    makeFarmhouse(px,0.21,pz);
+  } else {
+    // Sold: minimal marker stake
+    B(0.09,0.70,0.09,ML(0xC05050), px,0.21+0.35,pz);
+    B(0.40,0.12,0.09,ML(0xC05050), px,0.21+0.70,pz);
+  }
+});
+
+// ── CAMERA CONTROL ──
+let theta=0.52, phi=1.04, radius=20;
+const TGT=new THREE.Vector3(0,0,0);
+let dragging=false,lx=0,ly=0,pinch=null,dragMoved=false,tsx=0,tsy=0;
+
+function camUpdate(){
+  camera.position.set(
+    TGT.x+radius*Math.sin(phi)*Math.sin(theta),
+    TGT.y+radius*Math.cos(phi),
+    TGT.z+radius*Math.sin(phi)*Math.cos(theta)
+  );
+  camera.lookAt(TGT);
+}
+camUpdate();
+
+canvas.addEventListener('touchstart',e=>{
+  if(e.touches.length===1){dragging=true;lx=e.touches[0].clientX;ly=e.touches[0].clientY;tsx=lx;tsy=ly;dragMoved=false;}
+  else if(e.touches.length===2){dragging=false;const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY;pinch=Math.sqrt(dx*dx+dy*dy);}
+},{passive:true});
+canvas.addEventListener('touchmove',e=>{
+  e.preventDefault();
+  if(e.touches.length===1&&dragging){
+    const dx=e.touches[0].clientX-lx,dy=e.touches[0].clientY-ly;
+    if(Math.abs(e.touches[0].clientX-tsx)>7||Math.abs(e.touches[0].clientY-tsy)>7)dragMoved=true;
+    theta-=dx*0.011; phi=Math.max(0.22,Math.min(Math.PI/2.1,phi+dy*0.009));
+    lx=e.touches[0].clientX; ly=e.touches[0].clientY; camUpdate();
+  } else if(e.touches.length===2&&pinch!==null){
+    const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY;
+    const nd=Math.sqrt(dx*dx+dy*dy);
+    radius=Math.max(9,Math.min(30,radius*(pinch/nd))); pinch=nd; camUpdate();
+  }
+},{passive:false});
+canvas.addEventListener('touchend',e=>{
+  if(!dragMoved&&e.changedTouches.length===1)tap(e.changedTouches[0].clientX,e.changedTouches[0].clientY);
+  dragging=false; pinch=null;
+},{passive:true});
+canvas.addEventListener('mousedown',e=>{dragging=true;lx=e.clientX;ly=e.clientY;tsx=lx;tsy=ly;dragMoved=false;});
+canvas.addEventListener('mousemove',e=>{
+  if(!dragging)return;
+  if(Math.abs(e.clientX-tsx)>5||Math.abs(e.clientY-tsy)>5)dragMoved=true;
+  theta-=(e.clientX-lx)*0.007; phi=Math.max(0.22,Math.min(Math.PI/2.1,phi+(e.clientY-ly)*0.007));
+  lx=e.clientX; ly=e.clientY; camUpdate();
+});
+canvas.addEventListener('mouseup',e=>{if(!dragMoved)tap(e.clientX,e.clientY);dragging=false;});
+canvas.addEventListener('wheel',e=>{radius=Math.max(9,Math.min(30,radius+e.deltaY*0.025));camUpdate();},{passive:true});
+document.getElementById('zoomIn').onclick=()=>{radius=Math.max(9,radius-2);camUpdate();};
+document.getElementById('zoomOut').onclick=()=>{radius=Math.min(30,radius+2);camUpdate();};
+document.getElementById('resetBtn').onclick=()=>{theta=0.52;phi=1.04;radius=20;camUpdate();closePanel();};
+
+// ── RAYCAST ──
+const ray=new THREE.Raycaster(), ptr=new THREE.Vector2();
+let sel=null;
+function tap(cx,cy){
+  ptr.x=(cx/window.innerWidth)*2-1; ptr.y=-(cy/window.innerHeight)*2+1;
+  ray.setFromCamera(ptr,camera);
+  const hits=ray.intersectObjects(plotMeshes);
+  if(hits.length>0&&hits[0].object.userData.plot){
+    selectPlot(hits[0].object);
+    document.getElementById('hint').classList.add('hidden');
+  }
+}
+function selectPlot(mesh){
+  if(sel&&sel!==mesh){sel.position.y=sel.userData.origY;sel.material.emissiveIntensity=0.28;}
+  sel=mesh; mesh.position.y=mesh.userData.origY+0.45; mesh.material.emissiveIntensity=1.2;
+  const p=mesh.userData.plot;
+  document.getElementById('pName').textContent='Plot '+p.id;
+  document.getElementById('pPrice').innerHTML=p.price.replace(/(\d+)(L)/,'$1<small>$2</small>');
+  document.getElementById('pArea').textContent=p.area;
+  document.getElementById('pFacing').textContent=p.facing;
+  document.getElementById('pPlotNo').textContent=p.id;
+  const st=document.getElementById('pStatus');
+  st.textContent=p.status.charAt(0).toUpperCase()+p.status.slice(1);
+  st.className='plot-status status-'+p.status;
+  document.getElementById('pFeatures').innerHTML=p.features.map(f=>`<span class="feature-tag">${f}</span>`).join('');
+  const eb=document.getElementById('enquireBtn');
+  eb.disabled=p.status!=='available'; eb.style.opacity=p.status!=='available'?'0.5':'1';
+  document.getElementById('controls').style.bottom='210px';
+  document.getElementById('panel').classList.add('open');
+}
+function closePanel(){
+  if(sel){sel.position.y=sel.userData.origY;sel.material.emissiveIntensity=0.28;sel=null;}
+  document.getElementById('panel').classList.remove('open');
+  document.getElementById('controls').style.bottom='22px';
+}
+document.getElementById('panelClose').onclick=closePanel;
+document.getElementById('enquireBtn').onclick=()=>alert('Thank you for your interest!\nOur sales team will reach out shortly. 🏡');
+window.addEventListener('resize',()=>{
+  camera.aspect=window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth,window.innerHeight);
+});
+
+// ── ANIMATION LOOP ──
+let t=0;
+(function loop(){
+  requestAnimationFrame(loop);
+  t+=0.006;
+
+  // Floating selected plot
+  if(sel) sel.position.y=sel.userData.origY+0.45+Math.sin(t*2)*0.055;
+
+  // Pulsing glow on available plots
+  plotMeshes.forEach(m=>{
+    if(m!==sel&&m.userData.plot.status==='available')
+      m.material.emissiveIntensity=0.20+Math.sin(t*1.2+m.userData.plot.col*0.9)*0.11;
+  });
+
+  // Animated smoke rings — drift upward, fade, loop
+  smokeRings.forEach(sm=>{
+    sm.position.y+=sm.userData.speed;
+    // Scale up and fade out as they rise
+    const progress=(sm.position.y-sm.userData.baseY)/sm.userData.range;
+    sm.material.opacity=Math.max(0, sm.userData.initOp*(1-progress));
+    sm.scale.setScalar(1+progress*0.6);
+    // Loop back to base
+    if(progress>=1){
+      sm.position.y=sm.userData.baseY;
+      sm.material.opacity=sm.userData.initOp;
+      sm.scale.setScalar(1);
+    }
+  });
+
+  renderer.render(scene,camera);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Saphire Premium Farms</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0d1a0e;color:#f0ead6;font-family:'DM Sans',sans-serif;overflow:hidden;height:100dvh;width:100vw;touch-action:none}
+#canvas{display:block;width:100%;height:100%}
+
+.header{position:fixed;top:0;left:0;right:0;padding:14px 18px 8px;background:linear-gradient(to bottom,rgba(10,18,10,.97) 60%,transparent);z-index:10;display:flex;align-items:center;justify-content:space-between}
+.logo{display:flex;flex-direction:column}
+.logo-name{font-family:'Cormorant Garamond',serif;font-size:1.25rem;color:#D4A520;letter-spacing:.05em;line-height:1}
+.logo-sub{font-size:.58rem;letter-spacing:.18em;color:rgba(212,165,32,.7);text-transform:uppercase;margin-top:2px}
+.header-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.badge{background:rgba(212,165,32,.12);border:1px solid rgba(212,165,32,.35);color:#D4A520;font-size:.6rem;font-weight:500;letter-spacing:.12em;padding:3px 9px;border-radius:20px;text-transform:uppercase}
+.location{font-size:.58rem;color:rgba(240,234,214,.45);letter-spacing:.04em}
+
+.hint{position:fixed;bottom:190px;left:50%;transform:translateX(-50%);background:rgba(10,18,10,.9);border:1px solid rgba(212,165,32,.25);color:rgba(240,234,214,.7);font-size:.68rem;letter-spacing:.08em;padding:7px 16px;border-radius:20px;z-index:10;pointer-events:none;transition:opacity .6s;white-space:nowrap}
+.hint.hidden{opacity:0}
+
+.panel{position:fixed;bottom:0;left:0;right:0;background:linear-gradient(160deg,#131c10 0%,#0d1a0e 100%);border-top:1px solid rgba(212,165,32,.2);border-radius:24px 24px 0 0;padding:10px 20px 34px;z-index:20;transform:translateY(100%);transition:transform .45s cubic-bezier(.22,1,.36,1)}
+.panel.open{transform:translateY(0)}
+.panel-drag{width:36px;height:4px;background:rgba(212,165,32,.28);border-radius:2px;margin:0 auto 14px}
+.panel-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.plot-name{font-family:'Cormorant Garamond',serif;font-size:1.55rem;color:#f0ead6;line-height:1.1}
+.plot-status{font-size:.6rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;padding:3px 9px;border-radius:20px;margin-top:4px;display:inline-block}
+.status-available{background:rgba(212,165,32,.13);color:#D4A520;border:1px solid rgba(212,165,32,.38)}
+.status-sold{background:rgba(180,60,60,.13);color:#e07070;border:1px solid rgba(180,60,60,.38)}
+.status-reserved{background:rgba(200,140,50,.13);color:#e0a050;border:1px solid rgba(200,140,50,.38)}
+.plot-price{font-family:'Cormorant Garamond',serif;font-size:1.5rem;color:#D4A520;margin-bottom:12px}
+.plot-price small{font-size:.8rem;font-family:'DM Sans',sans-serif;color:rgba(212,165,32,.55);font-weight:300}
+.plot-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.stat-box{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:11px;padding:9px;text-align:center}
+.stat-val{font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:#f0ead6}
+.stat-lbl{font-size:.58rem;color:rgba(240,234,214,.4);text-transform:uppercase;letter-spacing:.08em;margin-top:2px}
+.plot-features{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.feature-tag{background:rgba(212,165,32,.07);border:1px solid rgba(212,165,32,.2);color:rgba(212,165,32,.8);font-size:.64rem;padding:3px 9px;border-radius:20px}
+.cta-row{display:flex;gap:9px}
+.btn-primary{flex:1;background:linear-gradient(135deg,#D4A520,#B8860B);color:#0d1a0e;border:none;border-radius:13px;padding:14px;font-family:'DM Sans',sans-serif;font-size:.88rem;font-weight:500;cursor:pointer}
+.btn-secondary{background:transparent;border:1px solid rgba(212,165,32,.35);color:#D4A520;border-radius:13px;padding:14px 16px;font-size:.88rem;cursor:pointer}
+.btn-close{background:rgba(255,255,255,.06);border:none;color:rgba(240,234,214,.5);border-radius:10px;padding:6px 11px;font-size:.95rem;cursor:pointer}
+
+.legend{position:fixed;top:72px;right:13px;background:rgba(10,18,10,.92);border:1px solid rgba(212,165,32,.15);border-radius:13px;padding:9px 13px;z-index:10;backdrop-filter:blur(6px)}
+.legend-item{display:flex;align-items:center;gap:7px;font-size:.6rem;color:rgba(240,234,214,.55);letter-spacing:.07em;text-transform:uppercase;margin-bottom:5px}
+.legend-item:last-child{margin-bottom:0}
+.legend-dot{width:9px;height:9px;border-radius:3px;flex-shrink:0}
+.avail-count{position:fixed;top:72px;left:13px;background:rgba(10,18,10,.92);border:1px solid rgba(212,165,32,.15);border-radius:13px;padding:9px 13px;z-index:10;backdrop-filter:blur(6px)}
+.avail-lbl{font-size:.56rem;color:rgba(240,234,214,.4);text-transform:uppercase;letter-spacing:.1em;margin-bottom:2px}
+.avail-val{font-family:'Cormorant Garamond',serif;font-size:1.15rem;color:#D4A520}
+.controls{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);display:flex;gap:11px;z-index:10;transition:bottom .4s cubic-bezier(.22,1,.36,1)}
+.ctrl-btn{background:rgba(10,18,10,.92);border:1px solid rgba(212,165,32,.2);color:rgba(240,234,214,.7);border-radius:50%;width:44px;height:44px;font-size:1.05rem;cursor:pointer;display:flex;align-items:center;justify-content:center;-webkit-tap-highlight-color:transparent}
+.ctrl-btn:active{background:rgba(212,165,32,.15)}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="logo">
+    <div class="logo-name">✦ Saphire</div>
+    <div class="logo-sub">Premium Farms</div>
+  </div>
+  <div class="header-right">
+    <div class="badge">Narola Sankal, Bhopal</div>
+    <div class="location">Bhopal-Raisen 6 Lane Highway</div>
+  </div>
+</div>
+<div class="avail-count"><div class="avail-lbl">Available</div><div class="avail-val" id="availCount">—</div></div>
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#D4A520"></div>Available</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#e07070"></div>Sold</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#e0a050"></div>Reserved</div>
+</div>
+<div class="hint" id="hint">TAP A PLOT TO EXPLORE</div>
+<div class="controls" id="controls">
+  <button class="ctrl-btn" id="zoomOut">−</button>
+  <button class="ctrl-btn" id="resetBtn">⟳</button>
+  <button class="ctrl-btn" id="zoomIn">+</button>
+</div>
+<div class="panel" id="panel">
+  <div class="panel-drag"></div>
+  <div class="panel-header">
+    <div><div class="plot-name" id="pName">Farm 1</div><div class="plot-status status-available" id="pStatus">Available</div></div>
+    <button class="btn-close" id="panelClose">✕</button>
+  </div>
+  <div class="plot-price" id="pPrice">Price on Request</div>
+  <div class="plot-stats">
+    <div class="stat-box"><div class="stat-val" id="pArea">—</div><div class="stat-lbl">Sq. Ft</div></div>
+    <div class="stat-box"><div class="stat-val" id="pFacing">—</div><div class="stat-lbl">Facing</div></div>
+    <div class="stat-box"><div class="stat-val" id="pPlotNo">—</div><div class="stat-lbl">Farm No.</div></div>
+  </div>
+  <div class="plot-features" id="pFeatures"></div>
+  <div class="cta-row">
+    <button class="btn-primary" id="enquireBtn">Enquire Now</button>
+    <button class="btn-secondary">📞</button>
+  </div>
+</div>
+<canvas id="canvas"></canvas>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ───────────────────────────────────────────────────────────
+// PLOT DATA — all 57 farms from the Saphire pamphlet
+// Grid: CELL=1.25, col-x = col*1.25 - 5.5, row-z = row*1.25 - 5.0
+// Format: [id, startCol, startRow, colSpan, rowSpan, areaSqFt, status]
+// ───────────────────────────────────────────────────────────
+const CELL = 1.25;
+function cx(col,cs=1){ return col*CELL - 5.5 + (cs-1)*CELL/2; }
+function rz(row,rs=1){ return row*CELL - 5.0 + (rs-1)*CELL/2; }
+function pw(cs){ return cs*CELL - 0.22; }
+function pd(rs){ return rs*CELL - 0.22; }
+
+// Main grid plots [id, col, row, cspan, rspan, area, status]
+const GRID_RAW = [
+  // ROW 0 — top of main grid
+  [57, 0,0,1,1, 20127,'available'],
+  [47, 1,0,1,1, 8750, 'available'],
+  [48, 2,0,1,1, 9730, 'sold'],
+  [50, 3,0,1,1, 16746,'available'],
+  [51, 4,0,1,1, 14452,'available'],
+  [52, 5,0,1,1, 10000,'reserved'],
+  [53, 6,0,1,1, 10000,'available'],
+  [54, 7,0,1,1, 10841,'available'],
+  // ROW 1
+  [44, 0,1,1,2, 20736,'available'], // double-height col 0
+  [45, 1,1,1,1, 8750, 'sold'],
+  [46, 2,1,1,1, 10000,'available'],
+  [49, 3,1,1,1, 10000,'available'],
+  // ROW 2  (44 continues in col 0)
+  [43, 1,2,1,1, 11250,'available'],
+  [37, 2,2,1,1, 10000,'reserved'],
+  [36, 3,2,1,1, 11250,'available'],
+  [23, 4,2,1,1, 11250,'available'],
+  [22, 5,2,1,1, 11250,'sold'],
+  [9,  6,2,1,1, 15404,'reserved'],
+  [8,  7,2,1,2, 14430,'available'], // double-height col 7
+  [7,  8,2,1,1, 12068,'available'],
+  // ROW 3  (8 continues in col 7)
+  [42, 1,3,1,1, 10000,'available'],
+  [38, 2,3,1,1, 10000,'sold'],
+  [35, 3,3,1,1, 11250,'available'],
+  [24, 4,3,1,1, 10000,'reserved'],
+  [21, 5,3,1,1, 10000,'available'],
+  [10, 6,3,1,1, 13538,'reserved'],
+  // ROW 4
+  [41, 0,4,1,1, 9541, 'available'],
+  [39, 2,4,1,1, 10000,'available'],
+  [34, 3,4,1,1, 10000,'sold'],
+  [25, 4,4,1,1, 10000,'available'],
+  [20, 5,4,1,1, 10000,'available'],
+  [11, 6,4,1,1, 12374,'reserved'],
+  // ROW 5
+  [40, 1,5,1,1, 10891,'available'],
+  [33, 2,5,1,2, 10000,'available'], // double-height
+  [26, 4,5,1,1, 10000,'sold'],
+  [19, 5,5,1,1, 10000,'available'],
+  [12, 6,5,1,1, 10896,'reserved'],
+  // ROW 6  (33 continues)
+  [56, 0,6,1,1, 5750, 'available'],
+  [27, 4,6,1,1, 10000,'available'],
+  [18, 5,6,1,1, 10000,'available'],
+  [13, 6,6,1,1, 11969,'reserved'],
+  // ROW 7
+  [31, 1,7,1,2, 11429,'sold'],     // double-height
+  [32, 2,7,1,1, 14822,'available'],
+  [28, 4,7,1,1, 10000,'available'],
+  [17, 5,7,1,1, 10000,'available'],
+  [14, 6,7,1,1, 12225,'reserved'],
+  // ROW 8  (31 continues)
+  [30, 2,8,1,1, 7611, 'available'],
+  [29, 4,8,1,1, 10000,'reserved'],
+  [16, 5,8,1,1, 10000,'available'],
+  [15, 6,8,1,1, 10795,'reserved'],
+];
+
+// Off-grid plots (highway section + right strip) [id, px, pz, plotW, plotD, area, status]
+const OFFGRID_RAW = [
+  [1,  -3.2,-9.2, 2.9,2.1, 38009,'available'],
+  [2,   1.2,-8.8, 2.6,1.9, 54497,'available'],
+  [3,   3.6,-7.6, 0.8,2.4, 21882,'available'],
+  [55,  4.5,-6.8, 0.9,1.8, 14728,'available'],
+  [4,   4.8,-5.7, 1.2,1.1, 12066,'reserved'],
+  [5,   5.2,-4.9, 1.0,1.0, 13832,'available'],
+  [6,   5.4,-3.4, 1.0,1.9, 6447, 'sold'],
+];
+
+// Build unified PLOTS array
+const PLOTS = [];
+const SQ_TO_YARDS = 0.1111;
+const SC={available:0xC49A10,sold:0xB04040,reserved:0xC07820};
+const SE={available:0x5A4200,sold:0x580808,reserved:0x5A3200};
+
+function autoFeatures(col,row,cs,rs,area){
+  const f=[];
+  if(col===0||row===0||col+cs-1>=7||row+rs-1>=8) f.push('Road Touch');
+  if((col===0&&row===0)||(col===0&&row+rs-1===8)||(col+cs-1>=7&&row===0)) f.push('Corner Plot');
+  if(area>=15000) f.push('Premium');
+  if(area>=18000) f.push('Large Plot');
+  if(row===0) f.push('Highway View');
+  if(col+cs-1>=6) f.push('Park Facing');
+  return f;
+}
+
+GRID_RAW.forEach(([id,col,row,cs,rs,area,status])=>{
+  PLOTS.push({
+    id, px:cx(col,cs), pz:rz(row,rs), pw:pw(cs), pd:pd(rs),
+    area, status,
+    facing: col===0?'West':col+cs-1>=7?'East':row===0?'North':'North',
+    features: autoFeatures(col,row,cs,rs,area),
+    areaYd: Math.round(area*SQ_TO_YARDS)
+  });
+});
+OFFGRID_RAW.forEach(([id,px,pz,pw_,pd_,area,status])=>{
+  PLOTS.push({
+    id, px, pz, pw:pw_, pd:pd_, area, status,
+    facing:'North', features:['Highway Facing','Premium'], areaYd:Math.round(area*SQ_TO_YARDS)
+  });
+});
+
+document.getElementById('availCount').textContent =
+  PLOTS.filter(p=>p.status==='available').length + ' / ' + PLOTS.length;
+
+// ── RENDERER ──
+const canvas=document.getElementById('canvas');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+renderer.setSize(window.innerWidth,window.innerHeight);
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.10;
+
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x0a1208);
+scene.fog=new THREE.Fog(0x0a1208,34,75);
+
+const camera=new THREE.PerspectiveCamera(50,window.innerWidth/window.innerHeight,0.1,120);
+camera.position.set(0,20,18); camera.lookAt(0,0,-1);
+
+// ── LIGHTS ──
+scene.add(new THREE.AmbientLight(0x7aaa5a,0.72));
+const sun=new THREE.DirectionalLight(0xfff3d0,1.9);
+sun.position.set(8,22,6); sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048);
+sun.shadow.camera.near=0.5; sun.shadow.camera.far=80;
+[-22,22].forEach(v=>{sun.shadow.camera.left=sun.shadow.camera.bottom=-v+v;});
+sun.shadow.camera.left=-24; sun.shadow.camera.right=24;
+sun.shadow.camera.top=24; sun.shadow.camera.bottom=-24;
+sun.shadow.bias=-0.0008; scene.add(sun);
+const fillL=new THREE.DirectionalLight(0x3a6a8a,0.38);
+fillL.position.set(-10,6,-12); scene.add(fillL);
+scene.add(new THREE.HemisphereLight(0x4a8a3a,0x1a3010,0.44));
+
+// ── MATERIAL HELPERS ──
+const MP=(c,s=20,o={})=>new THREE.MeshPhongMaterial({color:c,shininess:s,...o});
+const ML=(c,o={})=>new THREE.MeshLambertMaterial({color:c,...o});
+
+function B(w,h,d,mat,x,y,z,ry=0){
+  const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);
+  m.position.set(x,y,z); if(ry)m.rotation.y=ry;
+  m.castShadow=true; m.receiveShadow=true; scene.add(m); return m;
+}
+function C(rt,rb,h,seg,mat,x,y,z,ry=0){
+  const m=new THREE.Mesh(new THREE.CylinderGeometry(rt,rb,h,seg),mat);
+  m.position.set(x,y,z); if(ry)m.rotation.y=ry;
+  m.castShadow=true; scene.add(m); return m;
+}
+function S(r,seg,mat,x,y,z){
+  const m=new THREE.Mesh(new THREE.SphereGeometry(r,seg,seg),mat);
+  m.position.set(x,y,z); m.castShadow=true; scene.add(m); return m;
+}
+
+// ── MINI FARMHOUSE (scaled to fit any plot) ──
+function makeMiniHouse(cx,G,cz,plotW,plotD){
+  const s=Math.min(plotW,plotD)*0.50;
+  const mW=MP(0xF5EDD8,20), mR=MP(0xAF410E,10), mS=MP(0xD2BFA2,18);
+  const mT=MP(0xFFFBF2,55), mD=MP(0x3D1A08,28), mB=ML(0x9B4521);
+  const mGLD=MP(0xD4A830,70);
+
+  // Foundation
+  B(s*1.05,0.05,s*0.90,mS, cx,G+0.025,cz);
+  // Body
+  B(s*0.92,s*0.56,s*0.80,mW, cx,G+0.05+s*0.28,cz);
+  // Columns (2)
+  C(s*.040,s*.050,s*.53,8,mT, cx-s*.22,G+0.05+s*.265,cz-s*.40);
+  C(s*.040,s*.050,s*.53,8,mT, cx+s*.22,G+0.05+s*.265,cz-s*.40);
+  // Portico beam
+  B(s*.60,s*.05,s*.08,mS, cx,G+0.05+s*.56,cz-s*.40);
+  // Door
+  B(s*.15,s*.28,0.04,mD, cx,G+0.05+s*.14,cz-s*.42);
+  // Main hip roof
+  const rg=new THREE.CylinderGeometry(s*.08,s*.65,s*.42,4);
+  const rm=new THREE.Mesh(rg,mR);
+  rm.position.set(cx,G+0.05+s*.56+s*.21,cz); rm.rotation.y=Math.PI/4; rm.castShadow=true; scene.add(rm);
+  // Porch roof
+  const prg=new THREE.CylinderGeometry(s*.03,s*.33,s*.20,4);
+  const prm=new THREE.Mesh(prg,mR);
+  prm.position.set(cx,G+0.05+s*.56+s*.10,cz-s*.40); prm.rotation.y=Math.PI/4; prm.castShadow=true; scene.add(prm);
+  // Chimney
+  B(s*.09,s*.25,s*.09,mB, cx+s*.30,G+0.05+s*.56+s*.14,cz+s*.16);
+  // Gate pillar balls
+  S(s*.04,6,mGLD, cx-s*.55,G+0.05+s*.10,cz-s*.48);
+  S(s*.04,6,mGLD, cx+s*.55,G+0.05+s*.10,cz-s*.48);
+}
+
+// ── GROUND ──
+const gnd=new THREE.Mesh(new THREE.PlaneGeometry(52,52),ML(0x162812));
+gnd.rotation.x=-Math.PI/2; gnd.receiveShadow=true; scene.add(gnd);
+
+// ── HIGHWAY ROAD (top) ──
+B(28,0.04,1.80,MP(0x1A1A1A,5), 0,0.02,-10.5);          // main road
+B(28,0.042,0.06,MP(0xFFFFAA,20), 0,0.022,-10.5);        // center line
+B(28,0.044,0.04,MP(0xEEEEEE,15), 0,0.024,-11.10);       // edge line
+B(28,0.044,0.04,MP(0xEEEEEE,15), 0,0.024,-9.90);        // edge line
+// "Highway" label slab
+B(6.0,0.04,0.50,MP(0x101810,5), -1.5,0.02,-10.9);
+
+// ── INTERNAL ROADS (main grid cross-roads) ──
+const ROAD_MAT=ML(0x1E2E16);
+// Horizontal roads between rows
+for(let r=0;r<=8;r++){
+  const rZ=r*CELL-5.0;
+  if(r<9) B(14,0.030,0.20,ROAD_MAT, -1.25,0.015,rZ-CELL/2);
+}
+// Vertical roads between cols
+for(let c=0;c<=8;c++){
+  const cX=c*CELL-5.5;
+  B(0.20,0.030,12,ROAD_MAT, cX-CELL/2,0.015,-0.5);
+}
+// Right-side access road (connecting to plots 3,55,4,5,6)
+B(0.22,0.030,12,ROAD_MAT, 4.00,0.015,-4.5);
+// Connecting road top-section (plots 1,2 to highway)
+B(5.0,0.030,0.20,ROAD_MAT, -1.5,0.015,-7.6);
+B(0.22,0.030,3.5,ROAD_MAT, -0.5,0.015,-8.8);
+
+// ── RESORT 4.60 ACRE (bottom) ──
+const RESORT_MAT=MP(0xD4BFA0,10);
+B(6.2,0.06,3.0,RESORT_MAT, -0.8,0.03,7.80);
+B(4.0,0.05,1.2,RESORT_MAT, -1.2,0.025,9.55); // extra lobe
+// Resort label slab edge
+B(6.2,0.06,0.06,MP(0xB8A080,8), -0.8,0.065,6.30);
+
+// ── GREEN AREA (between cols 4-5, row 0) ──
+B(0.55,0.05,1.05,ML(0x3A8030), 0.32,0.025,-5.30);
+
+// ── PLOT MESHES + HOUSES ──
+const plotMeshes=[];
+
+PLOTS.forEach(p=>{
+  const G=0.21;
+  const pm=new THREE.MeshLambertMaterial({
+    color:SC[p.status], emissive:SE[p.status], emissiveIntensity:.28
+  });
+  const mesh=new THREE.Mesh(new THREE.BoxGeometry(p.pw,0.18,p.pd),pm);
+  mesh.position.set(p.px,G/2+0.03,p.pz);
+  mesh.castShadow=true; mesh.receiveShadow=true;
+  mesh.userData={plot:p, origY:G/2+0.03};
+  scene.add(mesh); plotMeshes.push(mesh);
+
+  if(p.status==='available'){
+    makeMiniHouse(p.px,0.12+0.06,p.pz, p.pw,p.pd);
+  } else if(p.status==='reserved'){
+    // ghost silhouette (lighter, simpler)
+    const s=Math.min(p.pw,p.pd)*0.45;
+    B(s*.90,s*.50,s*.80,MP(0xEDE0C2,10), p.px,0.12+0.06+s*.25,p.pz);
+    const rg2=new THREE.CylinderGeometry(s*.07,s*.62,s*.38,4);
+    const rm2=new THREE.Mesh(rg2,MP(0xBFA090,8));
+    rm2.position.set(p.px,0.12+0.06+s*.50+s*.19,p.pz); rm2.rotation.y=Math.PI/4; rm2.castShadow=true; scene.add(rm2);
+  } else {
+    // sold: stake marker
+    B(.08,.55,.08,ML(0xC05050), p.px,0.12+.27,p.pz);
+    B(.35,.10,.08,ML(0xC05050), p.px,0.12+.55,p.pz);
+  }
+});
+
+// ── PLOT NUMBER SPRITES (canvas labels) ──
+function makePlotLabel(id, px, pz){
+  const cvs=document.createElement('canvas');
+  cvs.width=64; cvs.height=32;
+  const ctx=cvs.getContext('2d');
+  ctx.fillStyle='rgba(0,0,0,0)';
+  ctx.fillRect(0,0,64,32);
+  ctx.fillStyle='rgba(10,18,10,0.80)';
+  ctx.roundRect(2,6,60,20,6);
+  ctx.fill();
+  ctx.fillStyle='#D4A520';
+  ctx.font='bold 13px sans-serif';
+  ctx.textAlign='center';
+  ctx.textBaseline='middle';
+  ctx.fillText(String(id),32,16);
+  const tex=new THREE.CanvasTexture(cvs);
+  const mat=new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false});
+  const sp=new THREE.Sprite(mat);
+  sp.scale.set(0.65,0.32,1);
+  sp.position.set(px,1.60,pz);
+  scene.add(sp);
+}
+PLOTS.forEach(p=>makePlotLabel(p.id,p.px,p.pz));
+
+// ── TREES (perimeter) ──
+function tree(x,z,s=1){
+  const h=0.75*s;
+  C(0.06*s,0.09*s,h,6,ML(0x5C3A1A), x,h/2+.01,z);
+  const lc=[0x3A7A2A,0x2D6020,0x4A8F35][Math.floor(Math.random()*3)];
+  C(0,0.40*s,0.85*s,8,ML(lc), x,h+0.42*s,z);
+  S(0.18*s,8,ML(lc), x,h+0.92*s,z);
+}
+// Border trees
+[-12,-12,-12,-12,-12,12,12,12,12,12].forEach((x,i)=>
+  tree(x,[-8,-4,0,4,8,-8,-4,0,4,8][i],.6+Math.random()*.4));
+[-8,-4,0,4,8].forEach(x=>{
+  tree(x,-13,.55+Math.random()*.35);
+  tree(x,10, .55+Math.random()*.35);
+});
+// Resort area trees
+[-4,-2,0,2,4].forEach(x=>tree(x,8.5,.5+Math.random()*.3));
+
+// ── CAMERA CONTROL ──
+let theta=0.50, phi=0.88, radius=26;
+const TGT=new THREE.Vector3(0,0,-1);
+let dragging=false,lx=0,ly=0,pinch=null,dragMoved=false,tsx=0,tsy=0;
+
+function camUpdate(){
+  camera.position.set(
+    TGT.x+radius*Math.sin(phi)*Math.sin(theta),
+    TGT.y+radius*Math.cos(phi),
+    TGT.z+radius*Math.sin(phi)*Math.cos(theta)
+  );
+  camera.lookAt(TGT);
+}
+camUpdate();
+
+canvas.addEventListener('touchstart',e=>{
+  if(e.touches.length===1){dragging=true;lx=e.touches[0].clientX;ly=e.touches[0].clientY;tsx=lx;tsy=ly;dragMoved=false;}
+  else if(e.touches.length===2){dragging=false;const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY;pinch=Math.sqrt(dx*dx+dy*dy);}
+},{passive:true});
+canvas.addEventListener('touchmove',e=>{
+  e.preventDefault();
+  if(e.touches.length===1&&dragging){
+    const dx=e.touches[0].clientX-lx,dy=e.touches[0].clientY-ly;
+    if(Math.abs(e.touches[0].clientX-tsx)>7||Math.abs(e.touches[0].clientY-tsy)>7)dragMoved=true;
+    theta-=dx*.010; phi=Math.max(.20,Math.min(Math.PI/2.05,phi+dy*.008));
+    lx=e.touches[0].clientX; ly=e.touches[0].clientY; camUpdate();
+  }else if(e.touches.length===2&&pinch!==null){
+    const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY;
+    const nd=Math.sqrt(dx*dx+dy*dy);
+    radius=Math.max(8,Math.min(36,radius*(pinch/nd))); pinch=nd; camUpdate();
+  }
+},{passive:false});
+canvas.addEventListener('touchend',e=>{
+  if(!dragMoved&&e.changedTouches.length===1)tap(e.changedTouches[0].clientX,e.changedTouches[0].clientY);
+  dragging=false; pinch=null;
+},{passive:true});
+canvas.addEventListener('mousedown',e=>{dragging=true;lx=e.clientX;ly=e.clientY;tsx=lx;tsy=ly;dragMoved=false;});
+canvas.addEventListener('mousemove',e=>{
+  if(!dragging)return;
+  if(Math.abs(e.clientX-tsx)>5||Math.abs(e.clientY-tsy)>5)dragMoved=true;
+  theta-=(e.clientX-lx)*.007; phi=Math.max(.20,Math.min(Math.PI/2.05,phi+(e.clientY-ly)*.007));
+  lx=e.clientX; ly=e.clientY; camUpdate();
+});
+canvas.addEventListener('mouseup',e=>{if(!dragMoved)tap(e.clientX,e.clientY);dragging=false;});
+canvas.addEventListener('wheel',e=>{radius=Math.max(8,Math.min(36,radius+e.deltaY*.022));camUpdate();},{passive:true});
+
+document.getElementById('zoomIn').onclick=()=>{radius=Math.max(8,radius-2);camUpdate();};
+document.getElementById('zoomOut').onclick=()=>{radius=Math.min(36,radius+2);camUpdate();};
+document.getElementById('resetBtn').onclick=()=>{theta=0.50;phi=0.88;radius=26;camUpdate();closePanel();};
+
+// ── RAYCAST ──
+const ray=new THREE.Raycaster(), ptr=new THREE.Vector2();
+let sel=null;
+function tap(ex,ey){
+  ptr.x=(ex/window.innerWidth)*2-1; ptr.y=-(ey/window.innerHeight)*2+1;
+  ray.setFromCamera(ptr,camera);
+  const hits=ray.intersectObjects(plotMeshes);
+  if(hits.length>0&&hits[0].object.userData.plot){
+    selectPlot(hits[0].object);
+    document.getElementById('hint').classList.add('hidden');
+  }
+}
+
+function selectPlot(mesh){
+  if(sel&&sel!==mesh){sel.position.y=sel.userData.origY;sel.material.emissiveIntensity=.28;}
+  sel=mesh; mesh.position.y=mesh.userData.origY+.40; mesh.material.emissiveIntensity=1.1;
+  const p=mesh.userData.plot;
+  document.getElementById('pName').textContent='Farm '+p.id;
+  const priceStr=p.area>=20000?'Price on Request':`₹${Math.round(p.area*185/100000*10)/10}<small>L</small>`;
+  document.getElementById('pPrice').innerHTML=priceStr;
+  document.getElementById('pArea').textContent=p.area.toLocaleString('en-IN');
+  document.getElementById('pFacing').textContent=p.facing;
+  document.getElementById('pPlotNo').textContent=String(p.id).padStart(2,'0');
+  const st=document.getElementById('pStatus');
+  st.textContent=p.status.charAt(0).toUpperCase()+p.status.slice(1);
+  st.className='plot-status status-'+p.status;
+  document.getElementById('pFeatures').innerHTML=p.features.map(f=>`<span class="feature-tag">${f}</span>`).join('');
+  const eb=document.getElementById('enquireBtn');
+  eb.disabled=p.status!=='available'; eb.style.opacity=p.status!=='available'?'0.5':'1';
+  document.getElementById('controls').style.bottom='204px';
+  document.getElementById('panel').classList.add('open');
+}
+function closePanel(){
+  if(sel){sel.position.y=sel.userData.origY;sel.material.emissiveIntensity=.28;sel=null;}
+  document.getElementById('panel').classList.remove('open');
+  document.getElementById('controls').style.bottom='20px';
+}
+document.getElementById('panelClose').onclick=closePanel;
+document.getElementById('enquireBtn').onclick=()=>{
+  const p=sel?.userData?.plot;
+  if(p) window.location.href=`tel:9644271804`;
+};
+
+window.addEventListener('resize',()=>{
+  camera.aspect=window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth,window.innerHeight);
+});
+
+// ── ANIMATION LOOP ──
+let t=0;
+(function loop(){
+  requestAnimationFrame(loop); t+=.006;
+  if(sel) sel.position.y=sel.userData.origY+.40+Math.sin(t*2)*.045;
+  plotMeshes.forEach(m=>{
+    if(m!==sel&&m.userData.plot.status==='available')
+      m.material.emissiveIntensity=.22+Math.sin(t*1.1+m.userData.plot.id*.4)*.10;
+  });
+  renderer.render(scene,camera);
+})();
+</script>
+</body>
+</html>
