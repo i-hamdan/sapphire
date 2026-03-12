@@ -345,7 +345,7 @@ const InteractiveMap3D = () => {
         </div>
         <div className="cta-row">
           <a 
-            href={`https://wa.me/919644271804?text=I'm interested in Farm ${selectedPlot ? selectedPlot.label : ''}`} 
+            href={`https://api.whatsapp.com/send?phone=919644271804&text=I'm interested in Farm ${selectedPlot ? selectedPlot.label : ''}`} 
             target="_blank" 
             rel="noopener noreferrer" 
             className="btn-primary"
