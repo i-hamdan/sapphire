@@ -135,140 +135,34 @@ def process_map():
     m_red = cv2.medianBlur(m_red, 7)
     cv2.imwrite("clean_plot_maps/debug_mask_red.png", m_red)
     
-from skimage.morphology import skeletonize, label
-
-def order_skeleton_points(pts):
-    """Walk the skeleton greedily from one end to the other."""
-    from scipy.spatial import KDTree
-    if not pts: return []
-    pts = np.array(pts)
-    
-    # 1. Find true endpoints (points with only 1 neighbor in a 3x3 or nearby)
-    # For speed and simplicity, we'll just use the point with the most extreme Y as a proxy, 
-    # but check if we can find a better one.
-    tree = KDTree(pts)
-    visited = np.zeros(len(pts), dtype=bool)
-    
-    # Find endpoints: points with few neighbors within a small radius
-    # (Distance of sqrt(2) for 8-connectivity)
-    neighbor_counts = [len(tree.query_ball_point(p, 1.5)) - 1 for p in pts]
-    potential_starts = np.where(np.array(neighbor_counts) == 1)[0]
-    
-    if len(potential_starts) > 0:
-        # Pick the one closest to the Y-extremes
-        y_min_idx = np.argmin(pts[:, 1])
-        start = potential_starts[np.argmin(np.linalg.norm(pts[potential_starts] - pts[y_min_idx], axis=1))]
-    else:
-        start = np.argmin(pts[:, 1])
-
-    path = [start]
-    visited[start] = True
-
-    for _ in range(len(pts) - 1):
-        current = pts[path[-1]]
-        # Find nearest unvisited neighbour (search k=10 to jump small gaps)
-        dists, idxs = tree.query(current, k=min(10, len(pts)))
-        found = False
-        for idx in idxs[1:]:  # skip self
-            if not visited[idx]:
-                path.append(idx)
-                visited[idx] = True
-                found = True
-                break
-        if not found: break # dead end
-
-    return pts[path].tolist()
-
-def smooth_points(pts, window=12):
-    """Aggressive moving average smoothing."""
-    if len(pts) <= window * 2: return pts
-    pts_arr = np.array(pts, dtype=float)
-    smoothed = pts_arr.copy()
-    for i in range(window, len(pts_arr) - window):
-        smoothed[i] = pts_arr[i - window:i + window].mean(axis=0)
-    return smoothed.tolist()
-
-def trim_and_extend(pts, trim=10, extend=15):
-    """Aggressively trim wobbly ends and extrapolate to reach road edge."""
-    if len(pts) < 40: return pts # Don't trim/extend tiny segments
-    pts_arr = np.array(pts)
-    pts_arr = pts_arr[trim:-trim]  # cut the wobbly ends
-    
-    # Extrapolate from the last 10 points to get a stable direction
-    # Start end
-    s1, s2 = pts_arr[min(10, len(pts_arr)-1)], pts_arr[0]
-    start_dir = (s2 - s1) / 10.0
-    
-    # End end
-    e1, e2 = pts_arr[max(-11, -len(pts_arr))], pts_arr[-1]
-    end_dir = (e2 - e1) / 10.0
-    
-    # Generate extension
-    start_ext = [pts_arr[0] + start_dir * (i+1) for i in range(extend)]
-    end_ext   = [pts_arr[-1] + end_dir * (i+1) for i in range(extend)]
-    
-    return np.vstack([start_ext[::-1], pts_arr, end_ext]).tolist()
-
-from scipy.interpolate import splprep, splev
-
-def extract_spines(mask, parent_cnt=None, threshold_factor=0.4):
-    # Slightly dilate mask to bridge tiny fragmentation gaps
-    mask_dilated = cv2.dilate(mask, np.ones((3,3), np.uint8), iterations=1)
-    
-    dist = cv2.distanceTransform(mask_dilated, cv2.DIST_L2, 5)
+def extract_spines(mask, parent_cnt=None, threshold_factor=0.7):
+    dist = cv2.distanceTransform(mask, cv2.DIST_L2, 5)
     _, max_val, _, _ = cv2.minMaxLoc(dist)
 
     # Get the thick ridge mask
     spine_mask = (dist > (max_val * threshold_factor)).astype(np.uint8)
 
-    # ✅ TRUE skeleton
+    # ✅ TRUE skeleton — 1-pixel-wide centerline, not a contour
     skeleton = skeletonize(spine_mask).astype(np.uint8)
-
-    # Label all connected regions, keep only the largest one (Removes Dots/Noise)
-    labeled = label(skeleton)
-    region_sizes = np.bincount(labeled.ravel())
-    if len(region_sizes) <= 1: return []
-    region_sizes[0] = 0  # ignore background
-    largest_label = region_sizes.argmax()
-    
-    # Also ignore tiny components (less than 10 pixels of skeleton)
-    if region_sizes[largest_label] < 10: return []
-    
-    skeleton = (labeled == largest_label).astype(np.uint8)
-
-    # Extract raw points from the skeleton
-    ys, xs = np.where(skeleton > 0)
-    pts = list(zip(xs.tolist(), ys.tolist()))
-    if len(pts) < 10: return []
-
-    # Order the points
-    pts = order_skeleton_points(pts)
-    if len(pts) < 5: return []
-
-    # --- NEW: Spline Interpolation for Ultimate Smoothness ---
-    try:
-        data = np.array(pts).T
-        # s=0 means it passes exactly through points, higher s = more smoothing
-        # k=3 for cubic spline
-        tck, u = splprep(data, s=len(pts)*0.2, k=min(3, len(pts)-1))
-        
-        # Sample points at regular intervals (Perfectly smooth)
-        # We sample 100 points to ensure dense coverage
-        u_fine = np.linspace(-0.05, 1.05, 100) # Extrapolate 5% at each end
-        new_pts = np.array(splev(u_fine, tck)).T
-        
-        pts = new_pts.tolist()
-    except Exception as e:
-        print(f"Spline fitting failed: {e}")
-        # Fallback to moving average if spline fails
-        pts = smooth_points(pts, window=8)
 
     # Get average width from distance values under the skeleton
     avg_w = np.mean(dist[skeleton > 0]) * 2.0
 
+    # Extract ordered points from the skeleton
+    ys, xs = np.where(skeleton > 0)
+    pts_raw = list(zip(xs.tolist(), ys.tolist()))
+
+    # Sort by Y so points flow along the road (assuming verticalish highway)
+    pts_raw.sort(key=lambda p: p[1])
+
     # Filter for parent_cnt if provided
     if parent_cnt is not None:
-        pts = [p for p in pts if cv2.pointPolygonTest(parent_cnt, (float(p[0]), float(p[1])), False) >= -2.0] # Be slightly generous with the boundary
+        pts = [p for p in pts_raw if cv2.pointPolygonTest(parent_cnt, (float(p[0]), float(p[1])), False) >= 0]
+    else:
+        pts = pts_raw
+
+    # Downsample to every Nth point to reduce noise
+    pts = pts[::6]
 
     if len(pts) >= 2:
         return [{
@@ -285,7 +179,7 @@ def extract_spines(mask, parent_cnt=None, threshold_factor=0.4):
         cX, cY = (int(M["m10"]/M["m00"]), int(M["m01"]/M["m00"])) if M["m00"] != 0 else (0,0)
         
         # Extract spines specifically for this highway segment
-        h_spines = extract_spines(m_red, parent_cnt=cnt, threshold_factor=0.4)
+        h_spines = extract_spines(m_red, parent_cnt=cnt, threshold_factor=0.7)
         
         # Use raw coordinates for highway to prevent tapering/thorns
         full_map_data.append({
@@ -318,7 +212,7 @@ def extract_spines(mask, parent_cnt=None, threshold_factor=0.4):
         
         road_count += 1
         # Extract spines specifically for this road segment (much cleaner now)
-        r_spines = extract_spines(m_blue_clean, parent_cnt=cnt, threshold_factor=0.4)
+        r_spines = extract_spines(m_blue_clean, parent_cnt=cnt, threshold_factor=0.8)
         
         # Smooth roads using fixed pixel epsilon to remove staircases without pinching ends
         approx = smooth_contour(cnt, fixed_epsilon=1.2)
