@@ -105,17 +105,44 @@ The highway is the "hero" element. We use a deep red mask and a massive thicknes
 
 ---
 
-## Phase VI: Vectorization & Optimization
+## Phase VI: Advanced Smoothing & Anti-Aliasing (Fixing "Jagged" Edges)
 
-### 6.1 Approximate Poly (The Lean Engine)
-A raw contour might have 500 points. This would lag the 3D application. We use `cv2.approxPolyDP` to simplify the shape while keeping the visual identity.
+High-resolution raster extraction often results in "pixel staircase" jaggedness. To ensure 3D shapes look premium and smooth, we employ a dual-layered smoothing pipeline.
+
+### 6.1 Morphological Anti-Aliasing
+Before the contour is even extracted, we apply **Median Blurring** to the binary mask. This removes isolated pixel noise and "rounds off" the hard square transitions of the raster grid without losing the shape's structural integrity.
 
 ```python
-epsilon = 0.002 * cv2.arcLength(cnt, True)
-approx = cv2.approxPolyDP(cnt, epsilon, True)
+# Eliminating pixel "stairs"
+plot_mask = cv2.medianBlur(plot_mask, 5)
 ```
 
-### 6.2 Centroid Calculation
+### 6.2 Category-Specific Simplification (Epsilon Strategy)
+Different map elements require different levels of "straightness." Using a flat epsilon for everything leads to jittery roads or over-simplified curves. We use a **Category-Aware Epsilon**:
+
+| Category | Epsilon Factor | Goal |
+| :--- | :--- | :--- |
+| **Arterial Roads** | `1.2px` (Fixed) | **The Holy Grail**: Eliminates staircases without "pinching" thin road ends. |
+| **Plots** | `0.003` (Precise) | Smooths jitter while preserving custom property curves. |
+| **Amenities** | `0.005` (Balanced) | Clean, organic look for gardens and pools. |
+
+---
+
+## Phase VII: Vectorization & Optimization (The Lean Engine)
+
+### 7.1 Fixed vs. Dynamic Epsilon
+A common pitfall in vectorization is using `arcLength` for every object. For thin, long segments like roads, a dynamic epsilon can become larger than the road's width, causing it to collapse into a "thorn." We use a **Fixed Epsilon (1.2px)** for roads to ensure 100% width preservation.
+
+```python
+def smooth_contour(cnt, epsilon_factor=None, fixed_epsilon=None):
+    if fixed_epsilon:
+        epsilon = fixed_epsilon
+    else:
+        epsilon = epsilon_factor * cv2.arcLength(cnt, True)
+    return cv2.approxPolyDP(cnt, epsilon, True)
+```
+
+### 7.2 Centroid Calculation
 We use **Image Moments** to find the exact "Center of Mass" for every plot. This coordinate is exported to JSON, allowing the 3D application to place labels and "Farmhouse Miniatures" perfectly in the center of the plot.
 
 ---

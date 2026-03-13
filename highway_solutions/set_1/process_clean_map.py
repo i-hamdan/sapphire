@@ -135,41 +135,40 @@ def process_map():
     m_red = cv2.medianBlur(m_red, 7)
     cv2.imwrite("clean_plot_maps/debug_mask_red.png", m_red)
     
-def extract_spines(mask, parent_cnt=None, threshold_factor=0.7):
-    dist = cv2.distanceTransform(mask, cv2.DIST_L2, 5)
-    _, max_val, _, _ = cv2.minMaxLoc(dist)
-
-    # Get the thick ridge mask
-    spine_mask = (dist > (max_val * threshold_factor)).astype(np.uint8)
-
-    # ✅ TRUE skeleton — 1-pixel-wide centerline, not a contour
-    skeleton = skeletonize(spine_mask).astype(np.uint8)
-
-    # Get average width from distance values under the skeleton
-    avg_w = np.mean(dist[skeleton > 0]) * 2.0
-
-    # Extract ordered points from the skeleton
-    ys, xs = np.where(skeleton > 0)
-    pts_raw = list(zip(xs.tolist(), ys.tolist()))
-
-    # Sort by Y so points flow along the road (assuming verticalish highway)
-    pts_raw.sort(key=lambda p: p[1])
-
-    # Filter for parent_cnt if provided
-    if parent_cnt is not None:
-        pts = [p for p in pts_raw if cv2.pointPolygonTest(parent_cnt, (float(p[0]), float(p[1])), False) >= 0]
-    else:
-        pts = pts_raw
-
-    # Downsample to every Nth point to reduce noise
-    pts = pts[::6]
-
-    if len(pts) >= 2:
-        return [{
-            "points": pts,
-            "width": float(avg_w)
-        }]
-    return []
+    def extract_spines(mask, parent_cnt=None, threshold_factor=0.85):
+        # Use distance transform to find the center line
+        dist = cv2.distanceTransform(mask, cv2.DIST_L2, 5)
+        _, max_val, _, _ = cv2.minMaxLoc(dist)
+        if max_val < 2: return [] # Too thin to have a spine
+        
+        # Threshold to get a "ridge" region
+        ridge = (dist > (max_val * threshold_factor)).astype(np.uint8)
+        
+        # skeletonize ridge to 1-pixel line
+        skel = skeletonize(ridge).astype(np.uint8) * 255
+        
+        contours, _ = cv2.findContours(skel, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+        if not contours: return []
+        
+        # find the longest skeleton path (for highway, should be one)
+        cnt = max(contours, key=lambda c: cv2.arcLength(c, False))
+        
+        # Use median to avoid edge noise
+        median_w = np.median(dist[skel > 0]) * 2.0
+        
+        pts = [p[0].tolist() for p in cnt]
+        
+        if len(pts) >= 2:
+            # Filter points to only those inside parent_cnt if provided
+            if parent_cnt is not None:
+                pts = [p for p in pts if cv2.pointPolygonTest(parent_cnt, (float(p[0]), float(p[1])), False) >= 0]
+            
+            if len(pts) >= 2:
+                return [{
+                    "points": pts,
+                    "width": float(median_w)
+                }]
+        return []
 
     cnts_h, _ = cv2.findContours(m_red, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     highway_found = False

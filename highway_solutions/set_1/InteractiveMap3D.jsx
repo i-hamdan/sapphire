@@ -157,104 +157,88 @@ const MapMesh = ({ polygon, isSelected, onClick }) => {
   // Procedural Dash Logic (Follow Spine)
   const renderDashes = () => {
     if (!polygon.spines || polygon.spines.length === 0) return null;
-    if (polygon.type === 'road') return null; // HIDDEN for arterial roads
-
-    const { points: spinePoints, width: spineWidth } = polygon.spines[0];
-    const S = SCALE;
+    if (polygon.type === 'road') return null; // User requested to hide arterial road dashes
+    
+    const dashes = [];
+    const S = SCALE; 
     const VW = viewWidth;
     const VH = viewHeight;
 
-    // Set 2 Configuration
+    // Set 1: Exact Lane offsets based on laneWidth (1/6th of total width)
     const laneOffsets = isHighway ? [
-        { type: 'edge',   offset: -1.0  }, // Left road edge (solid)
-        { type: 'dashed', offset: -0.66 }, // Left outer lane divider
-        { type: 'dashed', offset: -0.33 }, // Left inner lane divider
-        { type: 'solid',  offset:  0    }, // ← CENTER MEDIAN (thick yellow)
-        { type: 'dashed', offset:  0.33 }, // Right inner lane divider
-        { type: 'dashed', offset:  0.66 }, // Right outer lane divider
-        { type: 'edge',   offset:  1.0  }, // Right road edge (solid)
+        { type: 'dashed', offset: -1.5 },
+        { type: 'dashed', offset: -0.5 },
+        { type: 'solid',  offset: 0 },
+        { type: 'dashed', offset: 0.5 },
+        { type: 'dashed', offset: 1.5 }
     ] : [{ type: 'dashed', offset: 0 }];
 
-    const markingWidth = {
-        solid:  0.18,  // thick yellow median
-        dashed: 0.07,  // thin white dashes
-        edge:   0.07,  // thin white edge lines
-    };
+    polygon.spines.forEach((spine, sIdx) => {
+        const spinePoints = Array.isArray(spine) ? spine : spine.points;
+        const spineWidthPixels = (spine && spine.width) ? spine.width : 50;
+        
+        // Compute precise lane width
+        const totalWidth3D = spineWidthPixels * S;
+        const laneWidth = totalWidth3D / 6;
+        
+        const zLevel = 0.12; // Adjusted to sit on top of 0.1 depth
 
-    const markingColor = {
-        solid:  '#FFD700', // yellow center median
-        dashed: 'white',
-        edge:   'white',
-    };
+        laneOffsets.forEach((lane, lIdx) => {
+            const laneOffsetAmount = lane.offset * laneWidth;
 
-    const DASH_LEN = 0.9;
-    const GAP_LEN  = 0.6;
-    const halfWidth = (spineWidth / 2) * S * 0.92;
+            for (let i = 0; i < spinePoints.length - 1; i++) {
+                const p1 = spinePoints[i];
+                const p2 = spinePoints[i+1];
+                
+                const x1 = (p1[0] - VW / 2) * S;
+                const y1 = -(p1[1] - VH / 2) * S; 
+                const x2 = (p2[0] - VW / 2) * S;
+                const y2 = -(p2[1] - VH / 2) * S;
 
-    const dashes = [];
+                const dx = x2 - x1;
+                const dy = y2 - y1;
+                const len = Math.sqrt(dx*dx + dy*dy);
+                if (len < 0.01) continue;
 
-    laneOffsets.forEach((lane, laneIdx) => {
-        let dashAccum = 0; // accumulates distance along road
-        let drawing = true; // start with a dash
+                // Stable Normal Vector Math
+                const nx = -dy / len;
+                const ny = dx / len;
+                const angle = Math.atan2(dy, dx);
 
-        for (let i = 0; i < spinePoints.length - 1; i++) {
-            const p1 = spinePoints[i];
-            const p2 = spinePoints[i+1];
+                // Apply offset
+                const tx = (x1 + x2) / 2 + nx * laneOffsetAmount;
+                const ty = (y1 + y2) / 2 + ny * laneOffsetAmount;
 
-            const x1 = (p1[0] - VW / 2) * S;
-            const y1 = -(p1[1] - VH / 2) * S;
-            const x2 = (p2[0] - VW / 2) * S;
-            const y2 = -(p2[1] - VH / 2) * S;
+                if (lane.type === 'solid') {
+                    dashes.push(
+                        <mesh 
+                          key={`solid-${sIdx}-${i}-${lIdx}`} 
+                          position={[tx, ty, zLevel]}
+                          rotation={[0, 0, angle]}
+                        >
+                          <planeGeometry args={[len * 1.05, 0.14]} />
+                          <meshBasicMaterial color={0xffffff} opacity={0.9} transparent />
+                        </mesh>
+                    );
+                } else {
+                    // Stable dash logic based on segment index
+                    // (segmentIndex % 6 < 3) effectively creates Dash-Gap patterns
+                    if (i % 6 > 2) continue;
 
-            const dx = x2 - x1;
-            const dy = y2 - y1;
-            const segLen = Math.sqrt(dx * dx + dy * dy);
-            if (segLen < 0.01) continue;
-
-            const angle = Math.atan2(dy, dx);
-            const perpAngle = angle + Math.PI / 2;
-
-            const ox = Math.cos(perpAngle) * (lane.offset * halfWidth);
-            const oy = Math.sin(perpAngle) * (lane.offset * halfWidth);
-
-            const tx = (x1 + x2) / 2 + ox;
-            const ty = (y1 + y2) / 2 + oy;
-
-            // Solid lines and edges
-            if (lane.type === 'solid' || lane.type === 'edge') {
-                dashes.push(
-                    <mesh key={`${laneIdx}-${i}`} position={[tx, ty, 0.12]} rotation={[0, 0, angle]}>
-                        <planeGeometry args={[segLen + 0.01, markingWidth[lane.type]]} />
-                        <meshBasicMaterial 
-                            color={markingColor[lane.type]} 
-                            transparent 
-                            opacity={lane.type === 'solid' ? 0.95 : 0.7} 
-                        />
-                    </mesh>
-                );
-                continue;
+                    dashes.push(
+                        <mesh 
+                          key={`dash-${sIdx}-${i}-${lIdx}`} 
+                          position={[tx, ty, zLevel]}
+                          rotation={[0, 0, angle]}
+                        >
+                          <planeGeometry args={[len * 1.1, 0.10]} />
+                          <meshBasicMaterial color={0xffffff} opacity={0.9} transparent />
+                        </mesh>
+                    );
+                }
             }
-
-            // Dashed lines: proper dash/gap rhythm
-            dashAccum += segLen;
-            const threshold = drawing ? DASH_LEN : GAP_LEN;
-
-            if (dashAccum >= threshold) {
-                dashAccum = 0;
-                drawing = !drawing;
-            }
-
-            if (drawing) {
-                dashes.push(
-                    <mesh key={`${laneIdx}-${i}`} position={[tx, ty, 0.12]} rotation={[0, 0, angle]}>
-                        <planeGeometry args={[segLen, markingWidth.dashed]} />
-                        <meshBasicMaterial color="white" transparent opacity={0.65} />
-                    </mesh>
-                );
-            }
-        }
+        });
     });
-
     return dashes;
   };
 

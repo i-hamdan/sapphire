@@ -3,7 +3,6 @@ import numpy as np
 import json
 import os
 import pytesseract
-from skimage.morphology import skeletonize
 
 def process_map():
     image_path = "/Users/hamdan/Documents/BXB - Work/FarmHouse/farms2/clean_plot_maps/cleaner_plots.png"
@@ -135,41 +134,41 @@ def process_map():
     m_red = cv2.medianBlur(m_red, 7)
     cv2.imwrite("clean_plot_maps/debug_mask_red.png", m_red)
     
-def extract_spines(mask, parent_cnt=None, threshold_factor=0.7):
-    dist = cv2.distanceTransform(mask, cv2.DIST_L2, 5)
-    _, max_val, _, _ = cv2.minMaxLoc(dist)
-
-    # Get the thick ridge mask
-    spine_mask = (dist > (max_val * threshold_factor)).astype(np.uint8)
-
-    # ✅ TRUE skeleton — 1-pixel-wide centerline, not a contour
-    skeleton = skeletonize(spine_mask).astype(np.uint8)
-
-    # Get average width from distance values under the skeleton
-    avg_w = np.mean(dist[skeleton > 0]) * 2.0
-
-    # Extract ordered points from the skeleton
-    ys, xs = np.where(skeleton > 0)
-    pts_raw = list(zip(xs.tolist(), ys.tolist()))
-
-    # Sort by Y so points flow along the road (assuming verticalish highway)
-    pts_raw.sort(key=lambda p: p[1])
-
-    # Filter for parent_cnt if provided
-    if parent_cnt is not None:
-        pts = [p for p in pts_raw if cv2.pointPolygonTest(parent_cnt, (float(p[0]), float(p[1])), False) >= 0]
-    else:
-        pts = pts_raw
-
-    # Downsample to every Nth point to reduce noise
-    pts = pts[::6]
-
-    if len(pts) >= 2:
-        return [{
-            "points": pts,
-            "width": float(avg_w)
-        }]
-    return []
+    def extract_spines(mask, parent_cnt=None, threshold_factor=0.85):
+        # Use distance transform to find the center line
+        dist = cv2.distanceTransform(mask, cv2.DIST_L2, 5)
+        _, max_val, _, _ = cv2.minMaxLoc(dist)
+        if max_val < 2: return [] # Too thin to have a spine
+        
+        # Threshold for the "ridge" (center line)
+        spine_mask = cv2.compare(dist, max_val * threshold_factor, cv2.CMP_GE)
+        
+        # High-value pixels are the spine
+        spine_mask = (dist > (max_val * threshold_factor)).astype(np.uint8) * 255
+        
+        contours, _ = cv2.findContours(spine_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        valid_spines = []
+        for cnt in contours:
+            if cv2.arcLength(cnt, True) < 10: continue
+            
+            # Use distance transform to estimate width
+            # Create a mask just for this contour to sample distance values
+            c_mask = np.zeros(mask.shape, dtype=np.uint8)
+            cv2.drawContours(c_mask, [cnt], -1, 255, -1)
+            avg_w = np.mean(dist[c_mask > 0]) * 2.0
+            
+            pts = [p[0].tolist() for p in cnt]
+            if len(pts) > 2:
+                # Filter points to only those inside parent_cnt if provided
+                if parent_cnt is not None:
+                    pts = [p for p in pts if cv2.pointPolygonTest(parent_cnt, (float(p[0]), float(p[1])), False) >= 0]
+                
+                if len(pts) >= 2:
+                    valid_spines.append({
+                        "points": pts,
+                        "width": float(avg_w)
+                    })
+        return valid_spines
 
     cnts_h, _ = cv2.findContours(m_red, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     highway_found = False
