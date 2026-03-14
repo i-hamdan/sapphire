@@ -14,8 +14,9 @@ export const DEFAULT_MAP_CONFIG = {
     ground: "#f4ca90eb",
     fenceRail: "#ffffffff",
     fencePost: "#000000ff",
-    water: "#2b82b8", // Cerulean blue
-    mountain: "#4a3b32" // Rocky brown
+    water: "#1a73e8", // Premium Google Blue
+    mountain: "#3c4043", // Graphite Gray
+    foam: "#ffffff"
   },
   geometry: {
     plotDepth: 0.3,

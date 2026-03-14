@@ -640,52 +640,76 @@ const FLOWER_COLORS = ['#e74c3c', '#f39c12', '#9b59b6', '#e91e8c', '#ff6b35'];
 
 
 // ─────────────────────────────────────────────
-// WATER DETAILS — waves, sparkles, boats
+// PREMIUM WATER REDESIGN
 // ─────────────────────────────────────────────
 
-const WATER_Z = 0.16; // Just above water surface (depth = 0.15)
+const WATER_SURFACE_Z = 0.16;
 
-// Animated ripple/wave strip
-const WaterWaveStrip = ({ cx, cy, w, stripH, angle, index }) => {
-  const meshRef = useRef();
-  useFrame(({ clock }) => {
-    if (!meshRef.current) return;
-    const t = clock.elapsedTime;
-    meshRef.current.position.z = WATER_Z + Math.sin(t * 1.1 + index * 0.85) * 0.005;
-    meshRef.current.material.opacity = 0.07 + Math.sin(t * 0.6 + index * 1.4) * 0.045;
-  });
+const halton2 = (i, b) => {
+  let f = 1, r = 0;
+  while (i > 0) { f /= b; r += f * (i % b); i = Math.floor(i / b); }
+  return r;
+};
+
+const ShorelineFoam = ({ points }) => {
+  const foamPoints = useMemo(() => {
+    return points.map(p => new THREE.Vector3(p.x, p.y, WATER_SURFACE_Z + 0.001));
+  }, [points]);
+
+  const curve = useMemo(() => new THREE.CatmullRomCurve3(foamPoints, true), [foamPoints]);
+  const geometry = useMemo(() => new THREE.TubeGeometry(curve, points.length * 2, 0.12, 8, true), [curve, points]);
+
   return (
-    <mesh ref={meshRef} position={[cx, cy, WATER_Z]} rotation={[0, 0, angle]}>
-      <planeGeometry args={[w, stripH]} />
-      <meshBasicMaterial color="#aee8f8" transparent opacity={0.10} />
+    <mesh geometry={geometry}>
+      <meshStandardMaterial color="#ffffff" transparent opacity={0.4} emissive="#f0f8ff" emissiveIntensity={0.5} />
     </mesh>
   );
 };
 
-// Animated surface sparkle (light glint)
-const WaterSparkle = ({ x, y, index }) => {
+const WaterReflections = ({ cx, cy, bw, bh, pts3D }) => {
+  const reflections = useMemo(() => {
+    const res = [];
+    for (let i = 0; i < 25; i++) {
+      const rx = cx + (halton2(i, 11) - 0.5) * bw * 0.95;
+      const ry = cy + (halton2(i, 12) - 0.5) * bh * 0.95;
+      if (pointInPoly(rx, ry, pts3D)) {
+        res.push({ x: rx, y: ry, s: 0.5 + halton2(i, 13) * 1.5, id: i });
+      }
+    }
+    return res;
+  }, [cx, cy, bw, bh, pts3D]);
+
+  return (
+    <>
+      {reflections.map((r) => (
+        <ReflectionGlint key={r.id} x={r.x} y={r.y} size={r.s} index={r.id} />
+      ))}
+    </>
+  );
+};
+
+const ReflectionGlint = ({ x, y, size, index }) => {
   const meshRef = useRef();
   useFrame(({ clock }) => {
     if (!meshRef.current) return;
-    const t = clock.elapsedTime + index * 1.73;
-    const pulse = Math.max(0, Math.sin(t * 2.2));
-    meshRef.current.material.opacity = pulse * 0.55;
-    meshRef.current.position.z = WATER_Z + 0.003 + pulse * 0.004;
+    const t = clock.elapsedTime + index * 2.2;
+    meshRef.current.scale.setScalar(size * (1 + Math.sin(t) * 0.2));
+    meshRef.current.material.opacity = 0.15 + Math.sin(t * 1.5) * 0.1;
   });
+
   return (
-    <mesh ref={meshRef} position={[x, y, WATER_Z + 0.003]}>
-      <planeGeometry args={[0.25, 0.05]} />
-      <meshBasicMaterial color="white" transparent opacity={0} />
+    <mesh ref={meshRef} position={[x, y, WATER_SURFACE_Z + 0.005]}>
+      <planeGeometry args={[1.5, 0.1]} />
+      <meshBasicMaterial color="#ffffff" transparent opacity={0.2} />
     </mesh>
   );
 };
 
-// Simple low-poly boat that follows a closed curve
-const WaterBoat = ({ path, speed, initialOffset, hullColor }) => {
+const PremiumBoat = ({ path, speed, initialOffset, color }) => {
   const groupRef = useRef();
   const curve = useMemo(() => new THREE.CatmullRomCurve3(
-    path.map(p => new THREE.Vector3(p[0], p[1], WATER_Z + 0.05)),
-    true // closed loop
+    path.map(p => new THREE.Vector3(p[0], p[1], WATER_SURFACE_Z + 0.1)),
+    true
   ), [path]);
 
   useFrame(({ clock }) => {
@@ -694,57 +718,38 @@ const WaterBoat = ({ path, speed, initialOffset, hullColor }) => {
     const pos = curve.getPointAt(t);
     const tangent = curve.getTangentAt(t);
     groupRef.current.position.copy(pos);
-    // Rotate around local Z (= world vertical after group rotation)
     groupRef.current.rotation.z = Math.atan2(tangent.y, tangent.x);
+    // Subtle rocking
+    groupRef.current.rotation.x = Math.sin(clock.elapsedTime * 2 + initialOffset) * 0.1;
+    groupRef.current.rotation.y = Math.cos(clock.elapsedTime * 1.5 + initialOffset) * 0.05;
   });
 
   return (
     <group ref={groupRef}>
-      {/* Hull — tapered box */}
-      <mesh position={[0, 0, 0]}>
-        <boxGeometry args={[1.0, 0.4, 0.18]} />
-        <meshStandardMaterial color={hullColor} roughness={0.75} />
+      {/* Detailed Hull */}
+      <mesh rotation={[0, 0, 0]}>
+        <boxGeometry args={[1.4, 0.5, 0.3]} />
+        <meshStandardMaterial color={color} roughness={0.6} metalness={0.4} />
       </mesh>
-      {/* Bow taper overlay */}
-      <mesh position={[0.42, 0, 0]} rotation={[0, 0, Math.PI / 4]}>
-        <boxGeometry args={[0.22, 0.28, 0.19]} />
-        <meshStandardMaterial color={hullColor} roughness={0.75} />
-      </mesh>
-      {/* Deck */}
-      <mesh position={[-0.05, 0, 0.1]}>
-        <boxGeometry args={[0.7, 0.32, 0.06]} />
-        <meshStandardMaterial color="#e8dfc0" roughness={0.85} />
+      {/* Bow */}
+      <mesh position={[0.7, 0, 0]} rotation={[0, 0, Math.PI / 4]}>
+        <boxGeometry args={[0.35, 0.35, 0.3]} />
+        <meshStandardMaterial color={color} />
       </mesh>
       {/* Cabin */}
-      <mesh position={[-0.18, 0, 0.2]}>
-        <boxGeometry args={[0.32, 0.24, 0.18]} />
-        <meshStandardMaterial color="#f5f0e0" roughness={0.8} />
+      <mesh position={[-0.2, 0, 0.25]}>
+        <boxGeometry args={[0.5, 0.35, 0.25]} />
+        <meshStandardMaterial color="#f0f0f0" />
       </mesh>
-      {/* Cabin windows */}
-      <mesh position={[-0.18, 0.13, 0.21]}>
-        <planeGeometry args={[0.1, 0.07]} />
-        <meshBasicMaterial color="#87ceeb" transparent opacity={0.8} />
-      </mesh>
-      {/* Mast */}
-      <mesh position={[0.12, 0, 0.32]}>
-        <boxGeometry args={[0.04, 0.04, 0.5]} />
-        <meshStandardMaterial color="#7a5c2e" roughness={0.9} />
-      </mesh>
-      {/* Sail */}
-      <mesh position={[0.12, 0.14, 0.46]} rotation={[0, 0, 0.12]}>
-        <planeGeometry args={[0.07, 0.32]} />
-        <meshBasicMaterial color="white" transparent opacity={0.88} side={THREE.DoubleSide} />
-      </mesh>
-      {/* Wake ripple underneath */}
-      <mesh position={[-0.6, 0, -0.08]} rotation={[0, 0, 0]}>
-        <planeGeometry args={[0.6, 0.3]} />
-        <meshBasicMaterial color="#c8edf8" transparent opacity={0.3} />
+      {/* Wake trail */}
+      <mesh position={[-1.2, 0, -0.05]} rotation={[0, 0, 0]}>
+        <planeGeometry args={[1.8, 0.6]} />
+        <meshBasicMaterial color="#ffffff" transparent opacity={0.2} />
       </mesh>
     </group>
   );
 };
 
-// Orchestrator — computes all positions from polygon boundary
 const WaterDetails = ({ polygon }) => {
   const pts3D = useMemo(() => polygon.points.map(p => ({
     x: (p[0] - viewWidth / 2) * SCALE,
@@ -761,67 +766,25 @@ const WaterDetails = ({ polygon }) => {
     };
   }, [pts3D]);
 
-  // Wave strips — staggered across the body
-  const waves = useMemo(() => Array.from({ length: 9 }, (_, i) => {
-    const t = i / 9;
-    return {
-      cx: cx + (t - 0.5) * bw * 0.55,
-      cy: cy + ((i % 3) - 1) * bh * 0.22,
-      w: bw * (0.45 + t * 0.35),
-      stripH: 0.055 + (i % 3) * 0.025,
-      angle: (i * 0.11) - 0.25,
-      index: i,
-    };
-  }), [cx, cy, bw, bh]);
-
-  // Sparkles — deterministic scatter, filtered to inside polygon
-  const sparkles = useMemo(() => Array.from({ length: 16 }, (_, i) => ({
-    x: cx + (h2(i, 7) - 0.5) * bw * 0.78,
-    y: cy + (h2(i, 8) - 0.5) * bh * 0.78,
-    index: i,
-  })).filter(s => pointInPoly(s.x, s.y, pts3D)), [cx, cy, bw, bh, pts3D]);
-
-  // Boat paths — two ellipses at different radii/angles inside the body
-  const boatData = useMemo(() => {
-    const N = 24;
-    return [
-      {
-        // Boat 1: wide ellipse following the body shape
-        path: Array.from({ length: N }, (_, i) => {
-          const a = (i / N) * Math.PI * 2;
-          return [cx + Math.cos(a) * bw * 0.28, cy + Math.sin(a) * bh * 0.22];
-        }),
-        speed: 0.007, initialOffset: 0.0, hullColor: '#c0392b',
-      },
-      {
-        // Boat 2: smaller inner ellipse, opposite phase
-        path: Array.from({ length: N }, (_, i) => {
-          const a = (i / N) * Math.PI * 2;
-          return [cx + Math.cos(a) * bw * 0.16, cy + Math.sin(a) * bh * 0.13];
-        }),
-        speed: 0.010, initialOffset: 0.5, hullColor: '#2471a3',
-      },
-    ];
+  const boatPath = useMemo(() => {
+    const res = [];
+    const N = 32;
+    for (let i = 0; i < N; i++) {
+      const a = (i / N) * Math.PI * 2;
+      res.push([cx + Math.cos(a) * bw * 0.3, cy + Math.sin(a) * bh * 0.25]);
+    }
+    return res;
   }, [cx, cy, bw, bh]);
 
   return (
-    <>
-      {/* Animated wave strips */}
-      {waves.map((w, i) => <WaterWaveStrip key={i} {...w} />)}
-
-      {/* Surface sparkles / light glints */}
-      {sparkles.map((s, i) => (
-        <WaterSparkle key={i} x={s.x} y={s.y} index={s.index} />
-      ))}
-
-      {/* Boats */}
-      {boatData.map((bd, i) => (
-        <WaterBoat key={i} {...bd} />
-      ))}
-    </>
+    <group>
+      <ShorelineFoam points={pts3D} />
+      <WaterReflections cx={cx} cy={cy} bw={bw} bh={bh} pts3D={pts3D} />
+      <PremiumBoat path={boatPath} speed={0.005} initialOffset={0} color="#8b0000" />
+      <PremiumBoat path={boatPath} speed={0.004} initialOffset={0.5} color="#000080" />
+    </group>
   );
 };
-
 
 // ─────────────────────────────────────────────
 // PLOT DETAILS (paths, lamps, trees, garden)
@@ -1115,7 +1078,6 @@ const MapMesh = ({ polygon, isSelected, onClick, config }) => {
       {/* Dense forest for green areas */}
       {polygon.type === 'green' && <GreenAreaForest polygon={polygon} />}
 
-      {/* ✅ ADD THIS LINE */}
       {polygon.type === 'water' && <WaterDetails polygon={polygon} />}
 
       {isPlot && (
