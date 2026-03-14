@@ -39,13 +39,19 @@ const createGeometry = (points, type) => {
   const isPlot = type === 'plot';
   const isRoad = type === 'road' || type === 'highway';
   
+  const depth = isPlot ? DEFAULT_MAP_CONFIG.geometry.plotDepth : 
+                (type === 'road' ? DEFAULT_MAP_CONFIG.geometry.roadDepth : 
+                (type === 'highway' ? DEFAULT_MAP_CONFIG.geometry.highwayDepth : 
+                (type === 'mountain' ? DEFAULT_MAP_CONFIG.geometry.mountainDepth : 
+                (type === 'water' ? DEFAULT_MAP_CONFIG.geometry.waterDepth : 0.08))));
+
   const extrudeSettings = {
-    depth: isPlot ? 0.3 : (isRoad ? 0.02 : (type === 'mountain' ? 0.05 : 0.08)),
-    bevelEnabled: isPlot,
-    bevelSegments: 2,
-    steps: 1,
-    bevelSize: 0.02,
-    bevelThickness: 0.02,
+    depth: depth,
+    bevelEnabled: isPlot || type === 'mountain',
+    bevelSegments: type === 'mountain' ? 5 : 2,
+    steps: type === 'mountain' ? 2 : 1,
+    bevelSize: type === 'mountain' ? 0.8 : 0.02,
+    bevelThickness: type === 'mountain' ? 1.5 : 0.02,
   };
 
   return {
@@ -910,9 +916,13 @@ const MapMesh = ({ polygon, isSelected, onClick, config }) => {
       <mesh geometry={geometry} receiveShadow castShadow>
         <meshStandardMaterial
           color={color}
-          roughness={isRoad ? 0.9 : 0.8}
-          emissive={isSelected ? color : 0x000000}
-          emissiveIntensity={isSelected ? 0.35 : 0}
+          roughness={isRoad || isHighway ? 0.95 : (polyType === 'water' ? 0.1 : 0.8)}
+          metalness={polyType === 'water' ? 0.4 : 0.1}
+          emissive={isSelected ? color : (polyType === 'water' ? color : 0x000000)}
+          emissiveIntensity={isSelected ? 0.35 : (polyType === 'water' ? 0.15 : 0)}
+          transparent={polyType === 'water'}
+          opacity={polyType === 'water' ? 0.85 : 1.0}
+          flatShading={polyType === 'mountain'}
         />
       </mesh>
 

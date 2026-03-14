@@ -14,14 +14,16 @@ export const DEFAULT_MAP_CONFIG = {
     ground: "#f4ca90eb",
     fenceRail: "#ffffffff",
     fencePost: "#000000ff",
-    water: "#1c5cb6ff",
-    mountain: "#9a7160ff"
+    water: "#2b82b8", // Cerulean blue
+    mountain: "#4a3b32" // Rocky brown
   },
   geometry: {
     plotDepth: 0.3,
     roadDepth: 0.02,
     highwayDepth: 0.1,
-    groundSize: 500
+    mountainDepth: 4.5,
+    waterDepth: 0.15,
+    groundSize: 1000
   }
 };
 
