@@ -15,6 +15,8 @@ export const DEFAULT_MAP_CONFIG = {
     fenceRail: "#ffffffff",
     fencePost: "#000000ff",
     water: "#1a73e8", // Premium Google Blue
+    waterDeep: "#0d47a1", // Deep blue
+    waterShallow: "#4285f4", // Lighter blue
     mountain: "#3c4043", // Graphite Gray
     foam: "#ffffff"
   },

@@ -657,11 +657,12 @@ const ShorelineFoam = ({ points }) => {
   }, [points]);
 
   const curve = useMemo(() => new THREE.CatmullRomCurve3(foamPoints, true), [foamPoints]);
-  const geometry = useMemo(() => new THREE.TubeGeometry(curve, points.length * 2, 0.12, 8, true), [curve, points]);
+  // Increased radius from 0.12 to 0.35 and increased opacity for visibility
+  const geometry = useMemo(() => new THREE.TubeGeometry(curve, points.length * 2, 0.35, 12, true), [curve, points]);
 
   return (
     <mesh geometry={geometry}>
-      <meshStandardMaterial color="#ffffff" transparent opacity={0.4} emissive="#f0f8ff" emissiveIntensity={0.5} />
+      <meshStandardMaterial color="#ffffff" transparent opacity={0.6} emissive="#ffffff" emissiveIntensity={0.4} />
     </mesh>
   );
 };
@@ -669,11 +670,11 @@ const ShorelineFoam = ({ points }) => {
 const WaterReflections = ({ cx, cy, bw, bh, pts3D }) => {
   const reflections = useMemo(() => {
     const res = [];
-    for (let i = 0; i < 25; i++) {
-      const rx = cx + (halton2(i, 11) - 0.5) * bw * 0.95;
-      const ry = cy + (halton2(i, 12) - 0.5) * bh * 0.95;
+    for (let i = 0; i < 15; i++) {
+      const rx = cx + (halton2(i, 11) - 0.5) * bw * 0.85;
+      const ry = cy + (halton2(i, 12) - 0.5) * bh * 0.85;
       if (pointInPoly(rx, ry, pts3D)) {
-        res.push({ x: rx, y: ry, s: 0.5 + halton2(i, 13) * 1.5, id: i });
+        res.push({ x: rx, y: ry, s: 0.8 + halton2(i, 13) * 1.8, id: i });
       }
     }
     return res;
@@ -686,6 +687,66 @@ const WaterReflections = ({ cx, cy, bw, bh, pts3D }) => {
       ))}
     </>
   );
+};
+
+const WaterGradient = ({ cx, cy, bw, bh, pts3D }) => {
+  const patches = useMemo(() => {
+    const res = [];
+    for (let i = 0; i < 10; i++) {
+      const rx = cx + (halton2(i, 14) - 0.5) * bw * 0.7;
+      const ry = cy + (halton2(i, 15) - 0.5) * bh * 0.7;
+      if (pointInPoly(rx, ry, pts3D)) {
+        res.push({
+          x: rx, y: ry,
+          sx: 5 + halton2(i, 16) * 15,
+          sy: 3 + halton2(i, 17) * 10,
+          color: i % 2 === 0 ? DEFAULT_MAP_CONFIG.colors.waterDeep : DEFAULT_MAP_CONFIG.colors.waterShallow,
+          id: i
+        });
+      }
+    }
+    return res;
+  }, [cx, cy, bw, bh, pts3D]);
+
+  return patches.map(p => (
+    <mesh key={p.id} position={[p.x, p.y, WATER_SURFACE_Z - 0.02]} rotation={[0, 0, p.id * 1.1]}>
+      <circleGeometry args={[1, 32]} />
+      <meshBasicMaterial color={p.color} transparent opacity={0.25} />
+      <primitive object={new THREE.Vector3(p.sx, p.sy, 1)} attach="scale" />
+    </mesh>
+  ));
+};
+
+const SingleRipple = ({ x, y, index, delay = 0 }) => {
+  const meshRef = useRef();
+  useFrame(({ clock }) => {
+    if (!meshRef.current) return;
+    const t = (clock.elapsedTime * 0.4 + delay) % 1;
+    meshRef.current.scale.setScalar(0.5 + t * 4.5);
+    meshRef.current.material.opacity = (1 - t) * 0.25;
+  });
+  return (
+    <mesh ref={meshRef} position={[x, y, WATER_SURFACE_Z + 0.005]}>
+      <ringGeometry args={[0.48, 0.52, 32]} />
+      <meshBasicMaterial color="#ffffff" transparent opacity={0} />
+    </mesh>
+  );
+};
+
+const WaterRipples = ({ cx, cy, bw, bh, pts3D }) => {
+  const ripples = useMemo(() => {
+    const res = [];
+    for (let i = 0; i < 12; i++) {
+      const rx = cx + (halton2(i, 19) - 0.5) * bw * 0.88;
+      const ry = cy + (halton2(i, 20) - 0.5) * bh * 0.88;
+      if (pointInPoly(rx, ry, pts3D)) {
+        res.push({ x: rx, y: ry, delay: halton2(i, 21), id: i });
+      }
+    }
+    return res;
+  }, [cx, cy, bw, bh, pts3D]);
+
+  return ripples.map(r => <SingleRipple key={r.id} x={r.x} y={r.y} index={r.id} delay={r.delay} />);
 };
 
 const ReflectionGlint = ({ x, y, size, index }) => {
@@ -707,6 +768,7 @@ const ReflectionGlint = ({ x, y, size, index }) => {
 
 const PremiumBoat = ({ path, speed, initialOffset, color }) => {
   const groupRef = useRef();
+  const rippleRef = useRef();
   const curve = useMemo(() => new THREE.CatmullRomCurve3(
     path.map(p => new THREE.Vector3(p[0], p[1], WATER_SURFACE_Z + 0.1)),
     true
@@ -721,31 +783,39 @@ const PremiumBoat = ({ path, speed, initialOffset, color }) => {
     groupRef.current.rotation.z = Math.atan2(tangent.y, tangent.x);
     // Subtle rocking
     groupRef.current.rotation.x = Math.sin(clock.elapsedTime * 2 + initialOffset) * 0.1;
-    groupRef.current.rotation.y = Math.cos(clock.elapsedTime * 1.5 + initialOffset) * 0.05;
+
+    // Wake ripples
+    if (rippleRef.current) {
+      const rt = (clock.elapsedTime * 1.5) % 1;
+      rippleRef.current.scale.set(1 + rt * 2, 1 + rt * 1, 1);
+      rippleRef.current.material.opacity = (1 - rt) * 0.4;
+    }
   });
 
   return (
-    <group ref={groupRef}>
-      {/* Detailed Hull */}
-      <mesh rotation={[0, 0, 0]}>
-        <boxGeometry args={[1.4, 0.5, 0.3]} />
-        <meshStandardMaterial color={color} roughness={0.6} metalness={0.4} />
-      </mesh>
-      {/* Bow */}
-      <mesh position={[0.7, 0, 0]} rotation={[0, 0, Math.PI / 4]}>
-        <boxGeometry args={[0.35, 0.35, 0.3]} />
-        <meshStandardMaterial color={color} />
-      </mesh>
-      {/* Cabin */}
-      <mesh position={[-0.2, 0, 0.25]}>
-        <boxGeometry args={[0.5, 0.35, 0.25]} />
-        <meshStandardMaterial color="#f0f0f0" />
-      </mesh>
-      {/* Wake trail */}
-      <mesh position={[-1.2, 0, -0.05]} rotation={[0, 0, 0]}>
-        <planeGeometry args={[1.8, 0.6]} />
-        <meshBasicMaterial color="#ffffff" transparent opacity={0.2} />
-      </mesh>
+    <group>
+      <group ref={groupRef}>
+        {/* Detailed Hull */}
+        <mesh>
+          <boxGeometry args={[1.4, 0.5, 0.3]} />
+          <meshStandardMaterial color={color} roughness={0.6} metalness={0.4} />
+        </mesh>
+        {/* Bow */}
+        <mesh position={[0.7, 0, 0]} rotation={[0, 0, Math.PI / 4]}>
+          <boxGeometry args={[0.35, 0.35, 0.3]} />
+          <meshStandardMaterial color={color} />
+        </mesh>
+        {/* Cabin */}
+        <mesh position={[-0.2, 0, 0.25]}>
+          <boxGeometry args={[0.5, 0.35, 0.25]} />
+          <meshStandardMaterial color="#f0f0f0" />
+        </mesh>
+        {/* Wake trail */}
+        <mesh ref={rippleRef} position={[-0.8, 0, -0.08]}>
+          <ringGeometry args={[0.8, 1.0, 32, 1, 0, Math.PI]} />
+          <meshBasicMaterial color="#ffffff" transparent opacity={0.3} rotation={[Math.PI, 0, 0]} />
+        </mesh>
+      </group>
     </group>
   );
 };
@@ -768,10 +838,12 @@ const WaterDetails = ({ polygon }) => {
 
   const boatPath = useMemo(() => {
     const res = [];
-    const N = 32;
+    const N = 40;
+    // Conservative path: 0.3 -> 0.45 reduction for strict containment
+    const marginW = bw * 0.22, marginH = bh * 0.18;
     for (let i = 0; i < N; i++) {
       const a = (i / N) * Math.PI * 2;
-      res.push([cx + Math.cos(a) * bw * 0.3, cy + Math.sin(a) * bh * 0.25]);
+      res.push([cx + Math.cos(a) * marginW, cy + Math.sin(a) * marginH]);
     }
     return res;
   }, [cx, cy, bw, bh]);
@@ -779,9 +851,11 @@ const WaterDetails = ({ polygon }) => {
   return (
     <group>
       <ShorelineFoam points={pts3D} />
+      <WaterGradient cx={cx} cy={cy} bw={bw} bh={bh} pts3D={pts3D} />
+      <WaterRipples cx={cx} cy={cy} bw={bw} bh={bh} pts3D={pts3D} />
       <WaterReflections cx={cx} cy={cy} bw={bw} bh={bh} pts3D={pts3D} />
-      <PremiumBoat path={boatPath} speed={0.005} initialOffset={0} color="#8b0000" />
-      <PremiumBoat path={boatPath} speed={0.004} initialOffset={0.5} color="#000080" />
+      <PremiumBoat path={boatPath} speed={0.0055} initialOffset={0} color="#8b0000" />
+      <PremiumBoat path={boatPath} speed={0.0035} initialOffset={0.5} color="#000080" />
     </group>
   );
 };
