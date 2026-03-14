@@ -826,9 +826,9 @@ const PremiumBoat = ({ path, speed, initialOffset, color }) => {
           <meshStandardMaterial color="#f0f0f0" />
         </mesh>
         {/* Wake trail */}
-        <mesh ref={rippleRef} position={[-0.8, 0, -0.08]} rotation={[0, 0, Math.PI / 2]}>
+        <mesh ref={rippleRef} position={[-0.8, 0, -0.08]} rotation={[0, 0, -Math.PI / 2]}>
           <ringGeometry args={[0.8, 1.0, 32, 1, 0, Math.PI]} />
-          <meshBasicMaterial color="#ffffff" transparent opacity={0.3} />
+          <meshBasicMaterial color="#ffffff" transparent opacity={0.3} depthWrite={false} />
         </mesh>
       </group>
     </group>
@@ -836,10 +836,17 @@ const PremiumBoat = ({ path, speed, initialOffset, color }) => {
 };
 
 const WaterDetails = ({ polygon }) => {
-  const pts3D = useMemo(() => polygon.points.map(p => ({
-    x: (p[0] - viewWidth / 2) * SCALE,
-    y: -(p[1] - viewHeight / 2) * SCALE,
-  })), [polygon]);
+  const pts3D = useMemo(() => {
+    const pts = polygon.points.map(p => ({
+      x: (p[0] - viewWidth / 2) * SCALE,
+      y: -(p[1] - viewHeight / 2) * SCALE,
+    }));
+    return (
+      pts.length > 1 &&
+      Math.abs(pts[0].x - pts[pts.length - 1].x) < 0.001 &&
+      Math.abs(pts[0].y - pts[pts.length - 1].y) < 0.001
+    ) ? pts.slice(0, -1) : pts;
+  }, [polygon]);
 
   const { cx, cy, bw, bh } = useMemo(() => {
     const xs = pts3D.map(p => p.x), ys = pts3D.map(p => p.y);
@@ -853,15 +860,37 @@ const WaterDetails = ({ polygon }) => {
 
   const boatPath = useMemo(() => {
     const res = [];
-    const N = 40;
-    // Conservative path: 0.3 -> 0.45 reduction for strict containment
-    const marginW = bw * 0.22, marginH = bh * 0.18;
+    const N = 48;
+    const margin = 2.2; // Safe distance for hull + wake
+    const centers = pts3D.length > 0 ? pts3D : [{ x: cx, y: cy }];
+
     for (let i = 0; i < N; i++) {
       const a = (i / N) * Math.PI * 2;
-      res.push([cx + Math.cos(a) * marginW, cy + Math.sin(a) * marginH]);
+      // Start with a large radius
+      let px = cx + Math.cos(a) * bw * 0.5;
+      let py = cy + Math.sin(a) * bh * 0.5;
+
+      // Iteratively contract towards centroid until safely inside with margin
+      let step = 0;
+      while (step < 60) {
+        const isInside = pointInPoly(px, py, centers);
+        const hasMargin = isInside && 
+                         pointInPoly(px + margin, py, centers) && 
+                         pointInPoly(px - margin, py, centers) && 
+                         pointInPoly(px, py + margin, centers) && 
+                         pointInPoly(px, py - margin, centers);
+        
+        if (hasMargin) break;
+        
+        // Move 5% closer to center each step
+        px = px * 0.94 + cx * 0.06;
+        py = py * 0.94 + cy * 0.06;
+        step++;
+      }
+      res.push([px, py]);
     }
     return res;
-  }, [cx, cy, bw, bh]);
+  }, [cx, cy, bw, bh, pts3D]);
 
   return (
     <group>
