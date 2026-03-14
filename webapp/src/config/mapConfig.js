@@ -15,7 +15,7 @@ export const DEFAULT_MAP_CONFIG = {
     fenceRail: "#ffffffff",
     fencePost: "#000000ff",
     water: "#1c5cb6ff",
-    mountain: "#852f0aff"
+    mountain: "#9a7160ff"
   },
   geometry: {
     plotDepth: 0.3,

@@ -809,15 +809,18 @@ const PlotDetails = ({ polygon, gateEdgeIdx, secondGateEdgeIdx = -1, cx, cy, con
 // MAP MESH
 // ─────────────────────────────────────────────
 const MapMesh = ({ polygon, isSelected, onClick, config }) => {
-  const isPlot = polygon.type === 'plot';
-  const isRoad = polygon.type === 'road';
-  const isHighway = polygon.type === 'highway';
+  // FIX: Some background areas are labeled "Plot ???" but should be treated as mountains
+  const polyType = (polygon.label === 'Plot ???') ? 'mountain' : polygon.type;
+  
+  const isPlot = polyType === 'plot' && polygon.id_num && polygon.id_num !== '???';
+  const isRoad = polyType === 'road';
+  const isHighway = polyType === 'highway';
 
   const { geometry, width, height, cx, cy } = useMemo(
-    () => createGeometry(polygon.points, polygon.type), [polygon]
+    () => createGeometry(polygon.points, polyType), [polygon, polyType]
   );
 
-  let colorHex = config.colors[polygon.type] || '#555555';
+  let colorHex = config.colors[polyType] || '#555555';
   if (isPlot) colorHex = isSelected ? config.colors.plotActive : config.colors.plot;
   const color = hexToThreeColor(colorHex);
 
@@ -895,8 +898,8 @@ const MapMesh = ({ polygon, isSelected, onClick, config }) => {
   let yPos = 0;
   if (isSelected) yPos = 0.5;
   else if (isRoad || isHighway) yPos = 0.01;
-  else if (polygon.type === 'water') yPos = 0.005; 
-  else if (polygon.type === 'mountain') yPos = 0.0; 
+  else if (polyType === 'water') yPos = 0.005; 
+  else if (polyType === 'mountain') yPos = 0.0; 
   
   return (
     <group
