@@ -51,11 +51,11 @@ const createGeometry = (points, type) => {
 
   const extrudeSettings = {
     depth: depth,
-    bevelEnabled: isPlot,
-    bevelSegments: 2,
-    steps: 1,
-    bevelSize: 0.02,
-    bevelThickness: 0.02,
+    bevelEnabled: isPlot || type === 'mountain',
+    bevelSegments: type === 'mountain' ? 5 : 2,
+    steps: type === 'mountain' ? 2 : 1,
+    bevelSize: type === 'mountain' ? 0.8 : 0.02,
+    bevelThickness: type === 'mountain' ? 1.5 : 0.02,
   };
 
   return {
@@ -1264,7 +1264,7 @@ const MapMesh = ({ polygon, isSelected, onClick, config }) => {
       {polygon.type === 'green' && <GreenAreaForest polygon={polygon} />}
 
       {polygon.type === 'water' && <WaterDetails polygon={polygon} />}
-      {polyType === 'mountain' && <MountainRange polygon={polygon} config={config} />}
+      {/* {polyType === 'mountain' && <MountainRange polygon={polygon} config={config} />} */}
 
       {isPlot && (
         <group
