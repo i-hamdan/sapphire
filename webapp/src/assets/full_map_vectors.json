@@ -44,8 +44,9 @@
     ],
     "area": 55211.0,
     "id_num": "???",
-    "label": "Mountain Range",
-    "type": "mountain"
+    "label": "Plot ???",
+    "type": "plot",
+    "orientation": 3.10800246189334
   },
   {
     "points": [
@@ -84,8 +85,9 @@
     ],
     "area": 32809.5,
     "id_num": "???",
-    "label": "Mountain Range",
-    "type": "mountain"
+    "label": "Plot ???",
+    "type": "plot",
+    "orientation": -0.08373097145586143
   },
   {
     "points": [
@@ -128,8 +130,9 @@
     ],
     "area": 14390.5,
     "id_num": "???",
-    "label": "Mountain Range",
-    "type": "mountain"
+    "label": "Plot ???",
+    "type": "plot",
+    "orientation": -0.1531171660709205
   },
   {
     "points": [
@@ -164,8 +167,9 @@
     ],
     "area": 8366.0,
     "id_num": "???",
-    "label": "Mountain Range",
-    "type": "mountain"
+    "label": "Plot ???",
+    "type": "plot",
+    "orientation": -0.19909885330948998
   },
   {
     "points": [
@@ -208,8 +212,9 @@
     ],
     "area": 8945.5,
     "id_num": "???",
-    "label": "Mountain Range",
-    "type": "mountain"
+    "label": "Plot ???",
+    "type": "plot",
+    "orientation": 3.0721321674573363
   },
   {
     "points": [
@@ -313,8 +318,9 @@
     ],
     "area": 17072.0,
     "id_num": "???",
-    "label": "Mountain Range",
-    "type": "mountain"
+    "label": "Plot ???",
+    "type": "plot",
+    "orientation": 0.23584489611080242
   },
   {
     "points": [
@@ -782,8 +788,9 @@
     ],
     "area": 10828.0,
     "id_num": "???",
-    "label": "Mountain Range",
-    "type": "mountain"
+    "label": "Plot ???",
+    "type": "plot",
+    "orientation": -3.044549598989209
   },
   {
     "points": [
@@ -1250,8 +1257,9 @@
     ],
     "area": 9397.0,
     "id_num": "???",
-    "label": "Mountain Range",
-    "type": "mountain"
+    "label": "Plot ???",
+    "type": "plot",
+    "orientation": -2.5694722475262535
   },
   {
     "points": [
@@ -1294,8 +1302,9 @@
     ],
     "area": 18301.5,
     "id_num": "???",
-    "label": "Mountain Range",
-    "type": "mountain"
+    "label": "Plot ???",
+    "type": "plot",
+    "orientation": -0.036395465763161446
   },
   {
     "points": [
@@ -1616,8 +1625,9 @@
     ],
     "area": 7238.0,
     "id_num": "???",
-    "label": "Mountain Range",
-    "type": "mountain"
+    "label": "Plot ???",
+    "type": "plot",
+    "orientation": -0.0211918252902752
   },
   {
     "points": [
@@ -2058,8 +2068,9 @@
     ],
     "area": 2658.5,
     "id_num": "???",
-    "label": "Mountain Range",
-    "type": "mountain"
+    "label": "Plot ???",
+    "type": "plot",
+    "orientation": -0.054086050909666915
   },
   {
     "points": [
