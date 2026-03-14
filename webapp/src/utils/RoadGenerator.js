@@ -1,5 +1,4 @@
 // Road generation logic
-import vectorsData from '../assets/full_map_vectors.json';
 
 const SCALE = 0.05;
 const viewWidth = 3180;

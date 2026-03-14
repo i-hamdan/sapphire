@@ -5,7 +5,7 @@ import './InteractiveMap.css';
 
 const InteractiveMap = () => {
   const [selectedPlot, setSelectedPlot] = useState(null);
-  
+
   // We extracted the exact viewBox from the original 3180x4181 pixel map
   const viewWidth = 3180;
   const viewHeight = 4181;
@@ -27,8 +27,8 @@ const InteractiveMap = () => {
       >
         <TransformComponent wrapperClass="map-transform-wrapper" contentClass="map-transform-content">
           <div className="map-wrapper">
-            <svg 
-              className="map-svg-overlay" 
+            <svg
+              className="map-svg-overlay"
               viewBox={`0 0 ${viewWidth} ${viewHeight}`}
               preserveAspectRatio="xMidYMid meet"
               style={{ width: '1200px', height: 'auto', display: 'block' }}
@@ -41,34 +41,34 @@ const InteractiveMap = () => {
                   onClick={() => handlePolygonClick(polygon)}
                 />
               ))}
-              
+
               {/* Optional: Add text labels for plots so users can see the numbers directly */}
               {vectorsData.filter(p => p.type === 'plot').map((polygon, index) => {
-                 if (polygon.label) {
-                   // Calculate approximate center for standard bounding box
-                   let minX = viewWidth, maxX = 0, minY = viewHeight, maxY = 0;
-                   polygon.points.forEach(p => {
-                     if (p[0] < minX) minX = p[0];
-                     if (p[0] > maxX) maxX = p[0];
-                     if (p[1] < minY) minY = p[1];
-                     if (p[1] > maxY) maxY = p[1];
-                   });
-                   const cx = (minX + maxX) / 2;
-                   const cy = (minY + maxY) / 2;
-                   
-                   return (
-                     <text 
-                       key={`label-${index}`} 
-                       x={cx} 
-                       y={cy} 
-                       className="plot-label"
-                       pointerEvents="none"
-                     >
-                       {polygon.label}
-                     </text>
-                   );
-                 }
-                 return null;
+                if (polygon.label) {
+                  // Calculate approximate center for standard bounding box
+                  let minX = viewWidth, maxX = 0, minY = viewHeight, maxY = 0;
+                  polygon.points.forEach(p => {
+                    if (p[0] < minX) minX = p[0];
+                    if (p[0] > maxX) maxX = p[0];
+                    if (p[1] < minY) minY = p[1];
+                    if (p[1] > maxY) maxY = p[1];
+                  });
+                  const cx = (minX + maxX) / 2;
+                  const cy = (minY + maxY) / 2;
+
+                  return (
+                    <text
+                      key={`label-${index}`}
+                      x={cx}
+                      y={cy}
+                      className="plot-label"
+                      pointerEvents="none"
+                    >
+                      {polygon.label}
+                    </text>
+                  );
+                }
+                return null;
               })}
             </svg>
           </div>
