@@ -20,7 +20,7 @@ const INTERSECTION_PLOTS = new Set(['5', '54', '9', '22', '23', '36', '37', '43'
 // ─────────────────────────────────────────────
 // GEOMETRY HELPER
 // ─────────────────────────────────────────────
-const createGeometry = (points, isPlot, isRoad) => {
+const createGeometry = (points, type) => {
   const shape = new THREE.Shape();
   let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
 
@@ -36,8 +36,11 @@ const createGeometry = (points, isPlot, isRoad) => {
     i === 0 ? shape.moveTo(x, y) : shape.lineTo(x, y);
   });
 
+  const isPlot = type === 'plot';
+  const isRoad = type === 'road' || type === 'highway';
+  
   const extrudeSettings = {
-    depth: isPlot ? 0.3 : (isRoad ? 0.02 : 0.1),
+    depth: isPlot ? 0.3 : (isRoad ? 0.02 : (type === 'mountain' ? 0.05 : 0.08)),
     bevelEnabled: isPlot,
     bevelSegments: 2,
     steps: 1,
@@ -811,7 +814,7 @@ const MapMesh = ({ polygon, isSelected, onClick, config }) => {
   const isHighway = polygon.type === 'highway';
 
   const { geometry, width, height, cx, cy } = useMemo(
-    () => createGeometry(polygon.points, isPlot, isRoad), [polygon]
+    () => createGeometry(polygon.points, polygon.type), [polygon]
   );
 
   let colorHex = config.colors[polygon.type] || '#555555';
@@ -888,11 +891,18 @@ const MapMesh = ({ polygon, isSelected, onClick, config }) => {
     return dashes;
   };
 
+  // Layering order (Y-index)
+  let yPos = 0;
+  if (isSelected) yPos = 0.5;
+  else if (isRoad || isHighway) yPos = 0.01;
+  else if (polygon.type === 'water') yPos = 0.005; 
+  else if (polygon.type === 'mountain') yPos = 0.0; 
+  
   return (
     <group
       rotation={[-Math.PI / 2, 0, 0]}
       onClick={(e) => { if (isPlot) { e.stopPropagation(); onClick(polygon); } }}
-      position={[0, isSelected ? 0.5 : (isRoad ? 0.01 : 0), 0]}
+      position={[0, yPos, 0]}
     >
       <mesh geometry={geometry} receiveShadow castShadow>
         <meshStandardMaterial

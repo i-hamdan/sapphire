@@ -3855,9 +3855,8 @@
       2726
     ],
     "area": 432843.0,
-    "id_num": "???",
-    "label": "Plot ???",
-    "type": "plot"
+    "label": "Mountain Range",
+    "type": "mountain"
   },
   {
     "type": "highway",

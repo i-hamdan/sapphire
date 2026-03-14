@@ -1,6 +1,6 @@
 export const DEFAULT_MAP_CONFIG = {
   colors: {
-    plot: "#6b6bf0ff", // muted gold
+    plot: "#6b6bf0ff", // muted purple/blue
     plotActive: "#047a1dff", // bright gold
     resort: "#884488", // Pinkish/Purple
     green: "#0d6402ff", // Forest Green
@@ -13,7 +13,9 @@ export const DEFAULT_MAP_CONFIG = {
     fillLight: "#3a6a8a",
     ground: "#f4ca90eb",
     fenceRail: "#ffffffff",
-    fencePost: "#000000ff"
+    fencePost: "#000000ff",
+    water: "#1c5cb6ff",
+    mountain: "#852f0aff"
   },
   geometry: {
     plotDepth: 0.3,
