@@ -51,11 +51,11 @@ const createGeometry = (points, type) => {
 
   const extrudeSettings = {
     depth: depth,
-    bevelEnabled: isPlot || type === 'mountain',
-    bevelSegments: type === 'mountain' ? 5 : 2,
-    steps: type === 'mountain' ? 2 : 1,
-    bevelSize: type === 'mountain' ? 0.8 : 0.02,
-    bevelThickness: type === 'mountain' ? 1.5 : 0.02,
+    bevelEnabled: isPlot,
+    bevelSegments: 2,
+    steps: 1,
+    bevelSize: 0.02,
+    bevelThickness: 0.02,
   };
 
   return {
@@ -866,11 +866,9 @@ const WaterDetails = ({ polygon }) => {
 
     for (let i = 0; i < N; i++) {
       const a = (i / N) * Math.PI * 2;
-      // Start with a large radius
       let px = cx + Math.cos(a) * bw * 0.5;
       let py = cy + Math.sin(a) * bh * 0.5;
 
-      // Iteratively contract towards centroid until safely inside with margin
       let step = 0;
       while (step < 60) {
         const isInside = pointInPoly(px, py, centers);
@@ -879,10 +877,7 @@ const WaterDetails = ({ polygon }) => {
                          pointInPoly(px - margin, py, centers) && 
                          pointInPoly(px, py + margin, centers) && 
                          pointInPoly(px, py - margin, centers);
-        
         if (hasMargin) break;
-        
-        // Move 5% closer to center each step
         px = px * 0.94 + cx * 0.06;
         py = py * 0.94 + cy * 0.06;
         step++;
@@ -900,6 +895,78 @@ const WaterDetails = ({ polygon }) => {
       <WaterReflections cx={cx} cy={cy} bw={bw} bh={bh} pts3D={pts3D} />
       <PremiumBoat path={boatPath} speed={0.0055} initialOffset={0} color="#8b0000" />
       <PremiumBoat path={boatPath} speed={0.0035} initialOffset={0.5} color="#000080" />
+    </group>
+  );
+};
+
+// ─────────────────────────────────────────────
+// MOUNTAIN RANGE — rugged 3D peaks
+// ─────────────────────────────────────────────
+
+const SinglePeak = ({ x, y, baseR, height, seed, config }) => {
+  const peakColor = config.colors.mountainPeak;
+  const snowColor = config.colors.snow;
+
+  return (
+    <group position={[x, y, 0]}>
+      {/* Mountain Base */}
+      <mesh position={[0, 0, height / 2]} rotation={[Math.PI / 2, 0, seed]}>
+        <coneGeometry args={[baseR, height, 4 + (seed % 3)]} />
+        <meshStandardMaterial color={peakColor} roughness={0.9} flatShading />
+      </mesh>
+      {/* Snow Cap */}
+      <mesh position={[0, 0, height * 0.82]} rotation={[Math.PI / 2, 0, seed]}>
+        <coneGeometry args={[baseR * 0.38, height * 0.32, 4 + (seed % 3)]} />
+        <meshStandardMaterial color={snowColor} roughness={0.4} emissive={snowColor} emissiveIntensity={0.2} />
+      </mesh>
+    </group>
+  );
+};
+
+const MountainRange = ({ polygon, config }) => {
+  const pts3D = useMemo(() => {
+    const pts = polygon.points.map(p => ({
+      x: (p[0] - viewWidth / 2) * SCALE,
+      y: -(p[1] - viewHeight / 2) * SCALE,
+    }));
+    return (
+      pts.length > 1 &&
+      Math.abs(pts[0].x - pts[pts.length - 1].x) < 0.001 &&
+      Math.abs(pts[0].y - pts[pts.length - 1].y) < 0.001
+    ) ? pts.slice(0, -1) : pts;
+  }, [polygon]);
+
+  const peaks = useMemo(() => {
+    const res = [];
+    const xs = pts3D.map(p => p.x), ys = pts3D.map(p => p.y);
+    const minX = Math.min(...xs), maxX = Math.max(...xs);
+    const minY = Math.min(...ys), maxY = Math.max(...ys);
+
+    const SPACING = 5.5; // Spread peaks out a bit
+    for (let gx = minX; gx <= maxX; gx += SPACING) {
+      for (let gy = minY; gy <= maxY; gy += SPACING) {
+        const seed = Math.floor((gx + 1000) * 13 + (gy + 1000) * 17);
+        const px = gx + (halton2(seed % 100, 2) - 0.5) * SPACING * 0.85;
+        const py = gy + (halton2(seed % 100, 3) - 0.5) * SPACING * 0.85;
+
+        if (pointInPoly(px, py, pts3D)) {
+          res.push({
+            x: px, y: py,
+            baseR: 4.5 + halton2(seed % 100, 4) * 6.5,
+            height: 7.0 + halton2(seed % 100, 5) * 18.0,
+            seed
+          });
+        }
+      }
+    }
+    return res;
+  }, [pts3D]);
+
+  return (
+    <group>
+      {peaks.map((p, i) => (
+        <SinglePeak key={i} {...p} config={config} />
+      ))}
     </group>
   );
 };
@@ -1197,6 +1264,7 @@ const MapMesh = ({ polygon, isSelected, onClick, config }) => {
       {polygon.type === 'green' && <GreenAreaForest polygon={polygon} />}
 
       {polygon.type === 'water' && <WaterDetails polygon={polygon} />}
+      {polyType === 'mountain' && <MountainRange polygon={polygon} config={config} />}
 
       {isPlot && (
         <group

@@ -18,13 +18,15 @@ export const DEFAULT_MAP_CONFIG = {
     waterDeep: "#0d47a1", // Deep blue
     waterShallow: "#4285f4", // Lighter blue
     mountain: "#3c4043", // Graphite Gray
+    mountainPeak: "#2c2f33", // Darker peak
+    snow: "#f8f9fa", // Bright snow cap
     foam: "#ffffff"
   },
   geometry: {
     plotDepth: 0.3,
     roadDepth: 0.02,
     highwayDepth: 0.1,
-    mountainDepth: 2.5,
+    mountainDepth: 0.1,
     waterDepth: 0.15,
     groundSize: 1000
   }
