@@ -38,12 +38,12 @@ const createGeometry = (points, type) => {
 
   const isPlot = type === 'plot';
   const isRoad = type === 'road' || type === 'highway';
-
-  const depth = isPlot ? DEFAULT_MAP_CONFIG.geometry.plotDepth :
-    (type === 'road' ? DEFAULT_MAP_CONFIG.geometry.roadDepth :
-      (type === 'highway' ? DEFAULT_MAP_CONFIG.geometry.highwayDepth :
-        (type === 'mountain' ? DEFAULT_MAP_CONFIG.geometry.mountainDepth :
-          (type === 'water' ? DEFAULT_MAP_CONFIG.geometry.waterDepth : 0.08))));
+  
+  const depth = isPlot ? DEFAULT_MAP_CONFIG.geometry.plotDepth : 
+                (type === 'road' ? DEFAULT_MAP_CONFIG.geometry.roadDepth : 
+                (type === 'highway' ? DEFAULT_MAP_CONFIG.geometry.highwayDepth : 
+                (type === 'mountain' ? DEFAULT_MAP_CONFIG.geometry.mountainDepth : 
+                (type === 'water' ? DEFAULT_MAP_CONFIG.geometry.waterDepth : 0.08))));
 
   const extrudeSettings = {
     depth: depth,
@@ -638,191 +638,6 @@ const GreenAreaForest = ({ polygon }) => {
 const FLOWER_OFFSETS = [[-0.55, -0.22], [0.0, 0.25], [0.52, -0.12], [-0.28, 0.30], [0.35, 0.18]];
 const FLOWER_COLORS = ['#e74c3c', '#f39c12', '#9b59b6', '#e91e8c', '#ff6b35'];
 
-
-// ─────────────────────────────────────────────
-// WATER DETAILS — waves, sparkles, boats
-// ─────────────────────────────────────────────
-
-const WATER_Z = 0.16; // Just above water surface (depth = 0.15)
-
-// Animated ripple/wave strip
-const WaterWaveStrip = ({ cx, cy, w, stripH, angle, index }) => {
-  const meshRef = useRef();
-  useFrame(({ clock }) => {
-    if (!meshRef.current) return;
-    const t = clock.elapsedTime;
-    meshRef.current.position.z = WATER_Z + Math.sin(t * 1.1 + index * 0.85) * 0.005;
-    meshRef.current.material.opacity = 0.07 + Math.sin(t * 0.6 + index * 1.4) * 0.045;
-  });
-  return (
-    <mesh ref={meshRef} position={[cx, cy, WATER_Z]} rotation={[0, 0, angle]}>
-      <planeGeometry args={[w, stripH]} />
-      <meshBasicMaterial color="#aee8f8" transparent opacity={0.10} />
-    </mesh>
-  );
-};
-
-// Animated surface sparkle (light glint)
-const WaterSparkle = ({ x, y, index }) => {
-  const meshRef = useRef();
-  useFrame(({ clock }) => {
-    if (!meshRef.current) return;
-    const t = clock.elapsedTime + index * 1.73;
-    const pulse = Math.max(0, Math.sin(t * 2.2));
-    meshRef.current.material.opacity = pulse * 0.55;
-    meshRef.current.position.z = WATER_Z + 0.003 + pulse * 0.004;
-  });
-  return (
-    <mesh ref={meshRef} position={[x, y, WATER_Z + 0.003]}>
-      <planeGeometry args={[0.25, 0.05]} />
-      <meshBasicMaterial color="white" transparent opacity={0} />
-    </mesh>
-  );
-};
-
-// Simple low-poly boat that follows a closed curve
-const WaterBoat = ({ path, speed, initialOffset, hullColor }) => {
-  const groupRef = useRef();
-  const curve = useMemo(() => new THREE.CatmullRomCurve3(
-    path.map(p => new THREE.Vector3(p[0], p[1], WATER_Z + 0.05)),
-    true // closed loop
-  ), [path]);
-
-  useFrame(({ clock }) => {
-    if (!groupRef.current) return;
-    const t = (clock.elapsedTime * speed + initialOffset) % 1;
-    const pos = curve.getPointAt(t);
-    const tangent = curve.getTangentAt(t);
-    groupRef.current.position.copy(pos);
-    // Rotate around local Z (= world vertical after group rotation)
-    groupRef.current.rotation.z = Math.atan2(tangent.y, tangent.x);
-  });
-
-  return (
-    <group ref={groupRef}>
-      {/* Hull — tapered box */}
-      <mesh position={[0, 0, 0]}>
-        <boxGeometry args={[1.0, 0.4, 0.18]} />
-        <meshStandardMaterial color={hullColor} roughness={0.75} />
-      </mesh>
-      {/* Bow taper overlay */}
-      <mesh position={[0.42, 0, 0]} rotation={[0, 0, Math.PI / 4]}>
-        <boxGeometry args={[0.22, 0.28, 0.19]} />
-        <meshStandardMaterial color={hullColor} roughness={0.75} />
-      </mesh>
-      {/* Deck */}
-      <mesh position={[-0.05, 0, 0.1]}>
-        <boxGeometry args={[0.7, 0.32, 0.06]} />
-        <meshStandardMaterial color="#e8dfc0" roughness={0.85} />
-      </mesh>
-      {/* Cabin */}
-      <mesh position={[-0.18, 0, 0.2]}>
-        <boxGeometry args={[0.32, 0.24, 0.18]} />
-        <meshStandardMaterial color="#f5f0e0" roughness={0.8} />
-      </mesh>
-      {/* Cabin windows */}
-      <mesh position={[-0.18, 0.13, 0.21]}>
-        <planeGeometry args={[0.1, 0.07]} />
-        <meshBasicMaterial color="#87ceeb" transparent opacity={0.8} />
-      </mesh>
-      {/* Mast */}
-      <mesh position={[0.12, 0, 0.32]}>
-        <boxGeometry args={[0.04, 0.04, 0.5]} />
-        <meshStandardMaterial color="#7a5c2e" roughness={0.9} />
-      </mesh>
-      {/* Sail */}
-      <mesh position={[0.12, 0.14, 0.46]} rotation={[0, 0, 0.12]}>
-        <planeGeometry args={[0.07, 0.32]} />
-        <meshBasicMaterial color="white" transparent opacity={0.88} side={THREE.DoubleSide} />
-      </mesh>
-      {/* Wake ripple underneath */}
-      <mesh position={[-0.6, 0, -0.08]} rotation={[0, 0, 0]}>
-        <planeGeometry args={[0.6, 0.3]} />
-        <meshBasicMaterial color="#c8edf8" transparent opacity={0.3} />
-      </mesh>
-    </group>
-  );
-};
-
-// Orchestrator — computes all positions from polygon boundary
-const WaterDetails = ({ polygon }) => {
-  const pts3D = useMemo(() => polygon.points.map(p => ({
-    x: (p[0] - viewWidth / 2) * SCALE,
-    y: -(p[1] - viewHeight / 2) * SCALE,
-  })), [polygon]);
-
-  const { cx, cy, bw, bh } = useMemo(() => {
-    const xs = pts3D.map(p => p.x), ys = pts3D.map(p => p.y);
-    const minX = Math.min(...xs), maxX = Math.max(...xs);
-    const minY = Math.min(...ys), maxY = Math.max(...ys);
-    return {
-      cx: (minX + maxX) / 2, cy: (minY + maxY) / 2,
-      bw: maxX - minX, bh: maxY - minY,
-    };
-  }, [pts3D]);
-
-  // Wave strips — staggered across the body
-  const waves = useMemo(() => Array.from({ length: 9 }, (_, i) => {
-    const t = i / 9;
-    return {
-      cx: cx + (t - 0.5) * bw * 0.55,
-      cy: cy + ((i % 3) - 1) * bh * 0.22,
-      w: bw * (0.45 + t * 0.35),
-      stripH: 0.055 + (i % 3) * 0.025,
-      angle: (i * 0.11) - 0.25,
-      index: i,
-    };
-  }), [cx, cy, bw, bh]);
-
-  // Sparkles — deterministic scatter, filtered to inside polygon
-  const sparkles = useMemo(() => Array.from({ length: 16 }, (_, i) => ({
-    x: cx + (h2(i, 7) - 0.5) * bw * 0.78,
-    y: cy + (h2(i, 8) - 0.5) * bh * 0.78,
-    index: i,
-  })).filter(s => pointInPoly(s.x, s.y, pts3D)), [cx, cy, bw, bh, pts3D]);
-
-  // Boat paths — two ellipses at different radii/angles inside the body
-  const boatData = useMemo(() => {
-    const N = 24;
-    return [
-      {
-        // Boat 1: wide ellipse following the body shape
-        path: Array.from({ length: N }, (_, i) => {
-          const a = (i / N) * Math.PI * 2;
-          return [cx + Math.cos(a) * bw * 0.28, cy + Math.sin(a) * bh * 0.22];
-        }),
-        speed: 0.007, initialOffset: 0.0, hullColor: '#c0392b',
-      },
-      {
-        // Boat 2: smaller inner ellipse, opposite phase
-        path: Array.from({ length: N }, (_, i) => {
-          const a = (i / N) * Math.PI * 2;
-          return [cx + Math.cos(a) * bw * 0.16, cy + Math.sin(a) * bh * 0.13];
-        }),
-        speed: 0.010, initialOffset: 0.5, hullColor: '#2471a3',
-      },
-    ];
-  }, [cx, cy, bw, bh]);
-
-  return (
-    <>
-      {/* Animated wave strips */}
-      {waves.map((w, i) => <WaterWaveStrip key={i} {...w} />)}
-
-      {/* Surface sparkles / light glints */}
-      {sparkles.map((s, i) => (
-        <WaterSparkle key={i} x={s.x} y={s.y} index={s.index} />
-      ))}
-
-      {/* Boats */}
-      {boatData.map((bd, i) => (
-        <WaterBoat key={i} {...bd} />
-      ))}
-    </>
-  );
-};
-
-
 // ─────────────────────────────────────────────
 // PLOT DETAILS (paths, lamps, trees, garden)
 // ─────────────────────────────────────────────
@@ -1002,7 +817,7 @@ const PlotDetails = ({ polygon, gateEdgeIdx, secondGateEdgeIdx = -1, cx, cy, con
 const MapMesh = ({ polygon, isSelected, onClick, config }) => {
   // FIX: Some background areas are labeled "Plot ???" but should be treated as mountains
   const polyType = (polygon.label === 'Plot ???') ? 'mountain' : polygon.type;
-
+  
   const isPlot = polyType === 'plot' && polygon.id_num && polygon.id_num !== '???';
   const isRoad = polyType === 'road';
   const isHighway = polyType === 'highway';
@@ -1089,9 +904,9 @@ const MapMesh = ({ polygon, isSelected, onClick, config }) => {
   let yPos = 0;
   if (isSelected) yPos = 0.5;
   else if (isRoad || isHighway) yPos = 0.01;
-  else if (polyType === 'water') yPos = 0.005;
-  else if (polyType === 'mountain') yPos = 0.0;
-
+  else if (polyType === 'water') yPos = 0.005; 
+  else if (polyType === 'mountain') yPos = 0.0; 
+  
   return (
     <group
       rotation={[-Math.PI / 2, 0, 0]}
@@ -1114,9 +929,6 @@ const MapMesh = ({ polygon, isSelected, onClick, config }) => {
       {(isRoad || isHighway) && renderDashes()}
       {/* Dense forest for green areas */}
       {polygon.type === 'green' && <GreenAreaForest polygon={polygon} />}
-
-      {/* ✅ ADD THIS LINE */}
-      {polygon.type === 'water' && <WaterDetails polygon={polygon} />}
 
       {isPlot && (
         <group

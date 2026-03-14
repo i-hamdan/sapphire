@@ -21,7 +21,7 @@ export const DEFAULT_MAP_CONFIG = {
     plotDepth: 0.3,
     roadDepth: 0.02,
     highwayDepth: 0.1,
-    mountainDepth: 4.5,
+    mountainDepth: 2.5,
     waterDepth: 0.15,
     groundSize: 1000
   }
