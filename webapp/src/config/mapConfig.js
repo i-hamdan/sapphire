@@ -31,6 +31,7 @@ export const DEFAULT_MAP_CONFIG = {
 };
 
 export const hexToThreeColor = (hex) => {
+  if (typeof hex !== 'string') return 0x555555;
   const cleanHex = hex.replace("#", "");
   // Only take the first 6 characters for the RGB color (RRGGBB)
   // Otherwise, 8-digit hex (RRGGBBAA) causes bit-shift issues in Three.js

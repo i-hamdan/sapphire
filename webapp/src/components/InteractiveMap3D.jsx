@@ -24,6 +24,10 @@ const createGeometry = (points, type) => {
   const shape = new THREE.Shape();
   let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
 
+  if (!points || !Array.isArray(points) || points.length === 0) {
+    return { geometry: new THREE.BufferGeometry(), width: 0, height: 0, cx: 0, cy: 0 };
+  }
+
   points.forEach((p, i) => {
     let x, y;
     if (p.length === 2 && Array.isArray(p)) {
@@ -653,12 +657,14 @@ const halton2 = (i, b) => {
 
 const ShorelineFoam = ({ points }) => {
   const foamPoints = useMemo(() => {
+    if (!points || points.length < 3) return null;
     return points.map(p => new THREE.Vector3(p.x, p.y, WATER_SURFACE_Z + 0.001));
   }, [points]);
 
-  const curve = useMemo(() => new THREE.CatmullRomCurve3(foamPoints, true), [foamPoints]);
-  // Increased radius from 0.12 to 0.35 and increased opacity for visibility
-  const geometry = useMemo(() => new THREE.TubeGeometry(curve, points.length * 2, 0.35, 12, true), [curve, points]);
+  const curve = useMemo(() => (foamPoints ? new THREE.CatmullRomCurve3(foamPoints, true) : null), [foamPoints]);
+  const geometry = useMemo(() => (curve ? new THREE.TubeGeometry(curve, points.length * 2, 0.35, 12, true) : null), [curve, points]);
+
+  if (!geometry) return null;
 
   return (
     <mesh geometry={geometry}>
@@ -709,10 +715,14 @@ const WaterGradient = ({ cx, cy, bw, bh, pts3D }) => {
   }, [cx, cy, bw, bh, pts3D]);
 
   return patches.map(p => (
-    <mesh key={p.id} position={[p.x, p.y, WATER_SURFACE_Z - 0.02]} rotation={[0, 0, p.id * 1.1]}>
+    <mesh
+      key={p.id}
+      position={[p.x, p.y, WATER_SURFACE_Z - 0.02]}
+      rotation={[0, 0, p.id * 1.1]}
+      scale={[p.sx, p.sy, 1]}
+    >
       <circleGeometry args={[1, 32]} />
       <meshBasicMaterial color={p.color} transparent opacity={0.25} />
-      <primitive object={new THREE.Vector3(p.sx, p.sy, 1)} attach="scale" />
     </mesh>
   ));
 };
@@ -720,7 +730,7 @@ const WaterGradient = ({ cx, cy, bw, bh, pts3D }) => {
 const SingleRipple = ({ x, y, index, delay = 0 }) => {
   const meshRef = useRef();
   useFrame(({ clock }) => {
-    if (!meshRef.current) return;
+    if (!meshRef.current || !meshRef.current.material) return;
     const t = (clock.elapsedTime * 0.4 + delay) % 1;
     meshRef.current.scale.setScalar(0.5 + t * 4.5);
     meshRef.current.material.opacity = (1 - t) * 0.25;
@@ -752,7 +762,7 @@ const WaterRipples = ({ cx, cy, bw, bh, pts3D }) => {
 const ReflectionGlint = ({ x, y, size, index }) => {
   const meshRef = useRef();
   useFrame(({ clock }) => {
-    if (!meshRef.current) return;
+    if (!meshRef.current || !meshRef.current.material) return;
     const t = clock.elapsedTime + index * 2.2;
     meshRef.current.scale.setScalar(size * (1 + Math.sin(t) * 0.2));
     meshRef.current.material.opacity = 0.15 + Math.sin(t * 1.5) * 0.1;
@@ -769,23 +779,28 @@ const ReflectionGlint = ({ x, y, size, index }) => {
 const PremiumBoat = ({ path, speed, initialOffset, color }) => {
   const groupRef = useRef();
   const rippleRef = useRef();
-  const curve = useMemo(() => new THREE.CatmullRomCurve3(
-    path.map(p => new THREE.Vector3(p[0], p[1], WATER_SURFACE_Z + 0.1)),
-    true
-  ), [path]);
+  const curve = useMemo(() => {
+    if (!path || path.length < 2) return null;
+    return new THREE.CatmullRomCurve3(
+      path.map(p => new THREE.Vector3(p[0], p[1], WATER_SURFACE_Z + 0.1)),
+      true
+    );
+  }, [path]);
 
   useFrame(({ clock }) => {
-    if (!groupRef.current) return;
+    if (!groupRef.current || !curve) return;
     const t = (clock.elapsedTime * speed + initialOffset) % 1;
+    if (isNaN(t)) return;
     const pos = curve.getPointAt(t);
     const tangent = curve.getTangentAt(t);
+    if (!pos || !tangent) return;
     groupRef.current.position.copy(pos);
     groupRef.current.rotation.z = Math.atan2(tangent.y, tangent.x);
     // Subtle rocking
     groupRef.current.rotation.x = Math.sin(clock.elapsedTime * 2 + initialOffset) * 0.1;
 
     // Wake ripples
-    if (rippleRef.current) {
+    if (rippleRef.current && rippleRef.current.material) {
       const rt = (clock.elapsedTime * 1.5) % 1;
       rippleRef.current.scale.set(1 + rt * 2, 1 + rt * 1, 1);
       rippleRef.current.material.opacity = (1 - rt) * 0.4;
@@ -811,9 +826,9 @@ const PremiumBoat = ({ path, speed, initialOffset, color }) => {
           <meshStandardMaterial color="#f0f0f0" />
         </mesh>
         {/* Wake trail */}
-        <mesh ref={rippleRef} position={[-0.8, 0, -0.08]}>
+        <mesh ref={rippleRef} position={[-0.8, 0, -0.08]} rotation={[0, 0, Math.PI / 2]}>
           <ringGeometry args={[0.8, 1.0, 32, 1, 0, Math.PI]} />
-          <meshBasicMaterial color="#ffffff" transparent opacity={0.3} rotation={[Math.PI, 0, 0]} />
+          <meshBasicMaterial color="#ffffff" transparent opacity={0.3} />
         </mesh>
       </group>
     </group>
