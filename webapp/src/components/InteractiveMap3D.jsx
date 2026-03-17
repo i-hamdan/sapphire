@@ -1444,7 +1444,7 @@ const MapMesh = ({ polygon, isSelected, onClick, config }) => {
         </group>
       )}
 
-      {isPlot && (
+      {isPlot && config.plotBoundary.isVisible && (
         <PlotBoundaryWall
           polygon={polygon}
           gateEdgeIdx={plotFacingData[polygon.label]?.gateEdgeIdx ?? -1}
@@ -1585,6 +1585,9 @@ const InteractiveMap3D = () => {
   const handleColorChange = (key, value) =>
     setMapConfig(prev => ({ ...prev, colors: { ...prev.colors, [key]: value } }));
 
+  const handleToggleChange = (category, key, value) =>
+    setMapConfig(prev => ({ ...prev, [category]: { ...prev[category], [key]: value } }));
+
   const handlePlotClick = (plot) => { setSelectedPlot(plot); setIsResetting(false); };
   const resetCamera = () => { setSelectedPlot(null); setIsResetting(true); };
 
@@ -1643,7 +1646,7 @@ const InteractiveMap3D = () => {
         </group>
 
         <group rotation={[-Math.PI / 2, 0, 0]}>
-          <CampusBoundary config={mapConfig} />
+          {mapConfig.campusBoundary.isVisible && <CampusBoundary config={mapConfig} />}
         </group>
 
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.05, 0]} receiveShadow>
@@ -1675,12 +1678,35 @@ const InteractiveMap3D = () => {
             <button onClick={() => setShowConfig(false)}>✕</button>
           </div>
           <div className="theme-editor-scroll">
-            {Object.entries(mapConfig.colors).map(([key, value]) => (
-              <div key={key} className="theme-editor-item">
-                <label>{key.replace(/([A-Z])/g, ' $1').toUpperCase()}</label>
-                <input type="color" value={value} onChange={(e) => handleColorChange(key, e.target.value)} />
+            <div className="theme-editor-section">
+              <h4>VISIBILITY</h4>
+              <div className="theme-editor-item toggle">
+                <label>PLOT BOUNDARIES</label>
+                <input
+                  type="checkbox"
+                  checked={mapConfig.plotBoundary.isVisible}
+                  onChange={(e) => handleToggleChange('plotBoundary', 'isVisible', e.target.checked)}
+                />
               </div>
-            ))}
+              <div className="theme-editor-item toggle">
+                <label>CAMPUS BOUNDARY</label>
+                <input
+                  type="checkbox"
+                  checked={mapConfig.campusBoundary.isVisible}
+                  onChange={(e) => handleToggleChange('campusBoundary', 'isVisible', e.target.checked)}
+                />
+              </div>
+            </div>
+
+            <div className="theme-editor-section">
+              <h4>COLORS</h4>
+              {Object.entries(mapConfig.colors).map(([key, value]) => (
+                <div key={key} className="theme-editor-item">
+                  <label>{key.replace(/([A-Z])/g, ' $1').toUpperCase()}</label>
+                  <input type="color" value={value} onChange={(e) => handleColorChange(key, e.target.value)} />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}

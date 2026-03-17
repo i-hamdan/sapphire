@@ -586,3 +586,27 @@
   border: 1px solid rgba(255,255,255,0.2);
   border-radius: 6px;
 }
+
+.theme-editor-section {
+  margin-bottom: 24px;
+}
+
+.theme-editor-section h4 {
+  font-size: 0.72rem;
+  color: #c8d96a;
+  letter-spacing: 0.12em;
+  margin: 0 0 14px 0;
+  opacity: 0.9;
+  border-bottom: 1px solid rgba(200, 217, 106, 0.15);
+  padding-bottom: 6px;
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 600;
+}
+
+.theme-editor-item.toggle input[type="checkbox"] {
+  accent-color: #c8d96a;
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+

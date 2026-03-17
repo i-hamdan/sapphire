@@ -40,6 +40,7 @@ export const DEFAULT_MAP_CONFIG = {
   },
   // Plot boundary wall — grey concrete + horizontal metal slat plates
   plotBoundary: {
+    isVisible: false,         // Toggle visibility
     wallHeight: 0.4,         // Concrete wall height
     wallThickness: 0.08,     // Wall depth/thickness
     pillarWidth: 0.14,       // Pillar cross-section size
@@ -52,6 +53,7 @@ export const DEFAULT_MAP_CONFIG = {
   },
   // Campus boundary wall — cream concrete base + dark metal mesh
   campusBoundary: {
+    isVisible: true,         // Toggle visibility
     wallHeight: 0.45,        // Cream base wall height
     wallThickness: 0.12,     // Base wall depth/thickness
     postWidth: 0.15,         // Metal post cross-section
@@ -59,7 +61,7 @@ export const DEFAULT_MAP_CONFIG = {
     postSpacing: 3.0,        // Distance between posts
     meshOpacity: 0.25,       // Chain-link mesh transparency
     railThickness: 0.05,     // Horizontal rail cross-section
-    padding: 3.0,            // Outward offset from development perimeter
+    padding: 4.5,            // Outward offset from development perimeter
     surfaceZ: 0.01,          // Base Z position
   },
 };
