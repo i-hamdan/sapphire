@@ -193,11 +193,11 @@ const CameraController = ({ selectedPlot, isResetting, onResetComplete }) => {
       ref={controlsRef}
       enableDamping
       dampingFactor={0.05}
-      minDistance={5}
-      maxDistance={300}
+      minDistance={2}
+      maxDistance={800}
       maxPolarAngle={Math.PI / 2.1}
-      touches={{ ONE: THREE.TOUCH.PAN, TWO: THREE.TOUCH.DOLLY_ROTATE }}
     />
+
   );
 };
 
@@ -1451,7 +1451,7 @@ const MapMesh = ({ polygon, isSelected, onClick, config }) => {
         </group>
       )}
 
-      {isPlot && config.plotBoundary.isVisible && (
+      {isPlot && isSelected && config.plotBoundary.isVisible && (
         <PlotBoundaryWall
           polygon={polygon}
           gateEdgeIdx={plotFacingData[polygon.label]?.gateEdgeIdx ?? -1}
@@ -1595,8 +1595,16 @@ const InteractiveMap3D = () => {
   const handleToggleChange = (category, key, value) =>
     setMapConfig(prev => ({ ...prev, [category]: { ...prev[category], [key]: value } }));
 
-  const handlePlotClick = (plot) => { setSelectedPlot(plot); setIsResetting(false); };
+  const handlePlotClick = (plot) => {
+    if (selectedPlot && selectedPlot.label === plot.label) {
+      resetCamera();
+    } else {
+      setSelectedPlot(plot);
+      setIsResetting(false);
+    }
+  };
   const resetCamera = () => { setSelectedPlot(null); setIsResetting(true); };
+
 
   return (
     <div className="map-container" style={{ width: '100vw', height: '100vh', position: 'relative', background: '#0a1208' }}>

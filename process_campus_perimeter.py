@@ -19,29 +19,30 @@ def extract_perimeter():
     # Convert to HSV
     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     
-    # Phase I: Precise Masking
-    # Black Border: Value < 100 seems very stable in the debug mask
+    # Phase I: Precise Masking (Combined Strategy)
+    # Extract both the dark border AND the yellow/brownish land
     mask_black = cv2.inRange(hsv, np.array([0, 0, 0]), np.array([180, 255, 100]))
+    mask_yellow = cv2.inRange(hsv, np.array([15, 50, 50]), np.array([40, 255, 255]))
     
-    # Phase II: Create Solid Body from Border
-    # Find contours of the border
-    contours_border, _ = cv2.findContours(mask_black, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    if not contours_border:
-        print("No black border contours found.")
+    # Combine them to bridge gaps and create a solid block for the whole campus
+    combined_land_mask = cv2.bitwise_or(mask_black, mask_yellow)
+    
+    # Phase II: Solid Body Generation
+    # Find all contours in the combined mask
+    contours_land, _ = cv2.findContours(combined_land_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    if not contours_land:
+        print("No plot/border contours found.")
         return
 
-    # Create a solid mask by filling the largest contour
-    main_contour = max(contours_border, key=cv2.contourArea)
+    # Create a solid mask by filling all detected land/border regions
+    # thickness=-1 fills the interior of the contours
     refined_mask = np.zeros_like(mask_black)
-    cv2.drawContours(refined_mask, [main_contour], -1, 255, -1)
-    
-    # Optional: Yellow-Brownish verification (to ensure we don't just pick a random black frame)
-    # mask_yellow = cv2.inRange(hsv, np.array([5, 50, 50]), np.array([40, 255, 255]))
-    # refined_mask = cv2.bitwise_or(refined_mask, mask_yellow)
+    cv2.drawContours(refined_mask, contours_land, -1, 255, -1)
     
     # Phase VI: Smoothing & Anti-Aliasing
     # Minimal median blur (3) to handle only the tiniest noise spikes
     refined_mask = cv2.medianBlur(refined_mask, 3)
+
     
     # Find final External Contour of the solid body
     final_contours, _ = cv2.findContours(refined_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)

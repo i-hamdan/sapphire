@@ -40,7 +40,7 @@ export const DEFAULT_MAP_CONFIG = {
   },
   // Plot boundary wall — grey concrete + horizontal metal slat plates
   plotBoundary: {
-    isVisible: false,         // Toggle visibility
+    isVisible: true,         // Toggle visibility
     wallHeight: 0.4,         // Concrete wall height
     wallThickness: 0.08,     // Wall depth/thickness
     pillarWidth: 0.14,       // Pillar cross-section size
