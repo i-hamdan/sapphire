@@ -3,6 +3,8 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Text } from '@react-three/drei';
 import * as THREE from 'three';
 import vectorsData from '../assets/full_map_vectors.json';
+import campusPerimeterData from '../assets/campus_perimeter.json';
+
 import { generateRoadGeometries } from '../utils/RoadGenerator';
 import { Farmhouse } from './Farmhouse';
 import { DEFAULT_MAP_CONFIG, hexToThreeColor } from '../config/mapConfig';
@@ -358,7 +360,12 @@ const computeCampusBoundary = (data, padding) => {
   return hull;
 };
 
-const campusHull = computeCampusBoundary(cleanMapData, DEFAULT_MAP_CONFIG.campusBoundary?.padding ?? 4.5);
+// Initial campus boundary from high-fidelity OpenCV extraction
+const campusHull = campusPerimeterData[0].points.map(p => ({
+  x: (p[0] - viewWidth / 2) * SCALE,
+  y: -(p[1] - viewHeight / 2) * SCALE,
+}));
+
 
 const CampusBoundarySegment = ({ x1, y1, x2, y2, config }) => {
   const cb = config.campusBoundary;
