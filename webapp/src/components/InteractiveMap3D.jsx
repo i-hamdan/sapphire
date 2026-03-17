@@ -200,45 +200,66 @@ const CameraController = ({ selectedPlot, isResetting, onResetComplete }) => {
 };
 
 // ─────────────────────────────────────────────
-// FENCE
+// PLOT BOUNDARY WALL — grey concrete + metal slat plates
 // ─────────────────────────────────────────────
-const FENCE_POST_H = 0.45;
-const FENCE_POST_W = 0.07;
-const FENCE_POST_GAP = 0.9;
-const FENCE_SURFACE_Z = 0.31;
-const GATE_OPENING_RATIO = 0.38;
-
-const FenceSegment = ({ x1, y1, x2, y2, railColor = '#7a5c2e', postColor = '#5c3d1a' }) => {
+const PlotWallSegment = ({ x1, y1, x2, y2, config }) => {
+  const pb = config.plotBoundary;
+  const colors = config.colors;
   const dx = x2 - x1, dy = y2 - y1;
   const len = Math.sqrt(dx * dx + dy * dy);
   if (len < 0.15) return null;
   const angle = Math.atan2(dy, dx);
   const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
-  const numPosts = Math.max(2, Math.round(len / FENCE_POST_GAP) + 1);
+  const baseZ = pb.surfaceZ;
   const elements = [];
 
-  [0.15, 0.35].forEach((rz, ri) => {
-    elements.push(
-      <mesh key={`rail-${ri}`} position={[mx, my, FENCE_SURFACE_Z + rz]} rotation={[0, 0, angle]}>
-        <boxGeometry args={[len, 0.05, 0.04]} />
-        <meshStandardMaterial color={railColor} roughness={0.9} />
-      </mesh>
-    );
-  });
+  // Concrete wall panel
+  elements.push(
+    <mesh key="wall" position={[mx, my, baseZ + pb.wallHeight / 2]} rotation={[0, 0, angle]}>
+      <boxGeometry args={[len, pb.wallThickness, pb.wallHeight]} />
+      <meshStandardMaterial color={colors.plotWall} roughness={0.85} />
+    </mesh>
+  );
 
-  for (let i = 0; i < numPosts; i++) {
-    const t = numPosts === 1 ? 0.5 : i / (numPosts - 1);
+  // Horizontal metal slat plates above wall
+  const slatStartZ = baseZ + pb.wallHeight + pb.slatGap;
+  for (let i = 0; i < pb.slatCount; i++) {
+    const slatZ = slatStartZ + i * (pb.slatHeight + pb.slatGap) + pb.slatHeight / 2;
     elements.push(
-      <mesh key={`post-${i}`} position={[x1 + t * dx, y1 + t * dy, FENCE_SURFACE_Z + FENCE_POST_H / 2]}>
-        <boxGeometry args={[FENCE_POST_W, FENCE_POST_W, FENCE_POST_H]} />
-        <meshStandardMaterial color={postColor} roughness={0.95} />
+      <mesh key={`slat-${i}`} position={[mx, my, slatZ]} rotation={[0, 0, angle]}>
+        <boxGeometry args={[len, pb.wallThickness * 0.5, pb.slatHeight]} />
+        <meshStandardMaterial color={colors.plotSlat} roughness={0.3} metalness={0.7} />
       </mesh>
     );
   }
+
+  // Concrete pillars at regular intervals
+  const totalHeight = pb.wallHeight + pb.slatCount * (pb.slatHeight + pb.slatGap) + pb.slatGap;
+  const numPillars = Math.max(2, Math.round(len / pb.pillarSpacing) + 1);
+  for (let i = 0; i < numPillars; i++) {
+    const t = numPillars === 1 ? 0.5 : i / (numPillars - 1);
+    const px = x1 + t * dx, py = y1 + t * dy;
+    // Pillar body
+    elements.push(
+      <mesh key={`pillar-${i}`} position={[px, py, baseZ + totalHeight / 2]}>
+        <boxGeometry args={[pb.pillarWidth, pb.pillarWidth, totalHeight]} />
+        <meshStandardMaterial color={colors.plotPillar} roughness={0.8} />
+      </mesh>
+    );
+    // Pillar cap
+    elements.push(
+      <mesh key={`cap-${i}`} position={[px, py, baseZ + totalHeight + 0.015]}>
+        <boxGeometry args={[pb.pillarWidth * 1.4, pb.pillarWidth * 1.4, 0.03]} />
+        <meshStandardMaterial color={colors.plotPillarCap} roughness={0.6} />
+      </mesh>
+    );
+  }
+
   return <>{elements}</>;
 };
 
-const PlotFence = ({ polygon, gateEdgeIdx, secondGateEdgeIdx = -1, config }) => {
+const PlotBoundaryWall = ({ polygon, gateEdgeIdx, secondGateEdgeIdx = -1, config }) => {
+  const pb = config.plotBoundary;
   const pts = polygon.points.map(p => ({
     x: (p[0] - viewWidth / 2) * SCALE,
     y: -(p[1] - viewHeight / 2) * SCALE,
@@ -258,25 +279,173 @@ const PlotFence = ({ polygon, gateEdgeIdx, secondGateEdgeIdx = -1, config }) => 
     const p1 = cleanPts[i], p2 = cleanPts[(i + 1) % n];
 
     if (gateEdges.has(i)) {
-      const gapStart = (1 - GATE_OPENING_RATIO) / 2;
+      const gapStart = (1 - pb.gateOpeningRatio) / 2;
       const gapEnd = 1 - gapStart;
       const lx2 = p1.x + gapStart * (p2.x - p1.x), ly2 = p1.y + gapStart * (p2.y - p1.y);
       const rx1 = p1.x + gapEnd * (p2.x - p1.x), ry1 = p1.y + gapEnd * (p2.y - p1.y);
       segments.push(
-        <FenceSegment key={`f-${i}-L`} x1={p1.x} y1={p1.y} x2={lx2} y2={ly2}
-          railColor={config.colors.fenceRail} postColor={config.colors.fencePost} />,
-        <FenceSegment key={`f-${i}-R`} x1={rx1} y1={ry1} x2={p2.x} y2={p2.y}
-          railColor={config.colors.fenceRail} postColor={config.colors.fencePost} />
+        <PlotWallSegment key={`w-${i}-L`} x1={p1.x} y1={p1.y} x2={lx2} y2={ly2} config={config} />,
+        <PlotWallSegment key={`w-${i}-R`} x1={rx1} y1={ry1} x2={p2.x} y2={p2.y} config={config} />
       );
     } else {
       segments.push(
-        <FenceSegment key={`f-${i}`} x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y}
-          railColor={config.colors.fenceRail} postColor={config.colors.fencePost} />
+        <PlotWallSegment key={`w-${i}`} x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} config={config} />
       );
     }
   }
   return <>{segments}</>;
 };
+
+// ─────────────────────────────────────────────
+// CAMPUS BOUNDARY — convex hull + cream wall + mesh fence
+// ─────────────────────────────────────────────
+const computeCampusBoundary = (data, padding) => {
+  const allPoints = [];
+  data.forEach(d => {
+    // Only include plots and internal roads to keep the boundary tight to the main development
+    if (['plot', 'road'].includes(d.type)) {
+      d.points.forEach(p => {
+        allPoints.push({
+          x: (p[0] - viewWidth / 2) * SCALE,
+          y: -(p[1] - viewHeight / 2) * SCALE,
+        });
+      });
+    }
+  });
+
+  if (allPoints.length < 3) return [];
+
+  // Andrew's monotone chain convex hull
+  allPoints.sort((a, b) => a.x - b.x || a.y - b.y);
+  const cross = (O, A, B) => (A.x - O.x) * (B.y - O.y) - (A.y - O.y) * (B.x - O.x);
+  const lower = [];
+  for (const p of allPoints) {
+    while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) lower.pop();
+    lower.push(p);
+  }
+  const upper = [];
+  for (let i = allPoints.length - 1; i >= 0; i--) {
+    const p = allPoints[i];
+    while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) upper.pop();
+    upper.push(p);
+  }
+  lower.pop();
+  upper.pop();
+  const hull = lower.concat(upper);
+
+  // Offset outward by padding
+  if (padding > 0 && hull.length >= 3) {
+    const n = hull.length;
+    const offsetHull = [];
+    for (let i = 0; i < n; i++) {
+      const prev = hull[(i - 1 + n) % n];
+      const curr = hull[i];
+      const next = hull[(i + 1) % n];
+      
+      const e1x = curr.x - prev.x, e1y = curr.y - prev.y;
+      const e2x = next.x - curr.x, e2y = next.y - curr.y;
+      const len1 = Math.hypot(e1x, e1y), len2 = Math.hypot(e2x, e2y);
+      
+      const n1x = -e1y / len1, n1y = e1x / len1;
+      const n2x = -e2y / len2, n2y = e2x / len2;
+      const nx = n1x + n2x, ny = n1y + n2y;
+      const nLen = Math.hypot(nx, ny) || 1;
+      
+      offsetHull.push({ x: curr.x + (nx / nLen) * padding, y: curr.y + (ny / nLen) * padding });
+    }
+    return offsetHull;
+  }
+  return hull;
+};
+
+const campusHull = computeCampusBoundary(cleanMapData, DEFAULT_MAP_CONFIG.campusBoundary?.padding ?? 4.5);
+
+const CampusBoundarySegment = ({ x1, y1, x2, y2, config }) => {
+  const cb = config.campusBoundary;
+  const colors = config.colors;
+  const dx = x2 - x1, dy = y2 - y1;
+  const len = Math.sqrt(dx * dx + dy * dy);
+  if (len < 0.2) return null;
+  const angle = Math.atan2(dy, dx);
+  const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+  const baseZ = cb.surfaceZ;
+  const elements = [];
+
+  // Cream concrete base wall
+  elements.push(
+    <mesh key="base" position={[mx, my, baseZ + cb.wallHeight / 2]} rotation={[0, 0, angle]}>
+      <boxGeometry args={[len, cb.wallThickness, cb.wallHeight]} />
+      <meshStandardMaterial color={colors.campusWall} roughness={0.88} metalness={0.05} />
+    </mesh>
+  );
+
+  // Dark metal posts at regular intervals
+  const numPosts = Math.max(2, Math.round(len / cb.postSpacing) + 1);
+  for (let i = 0; i < numPosts; i++) {
+    const t = numPosts === 1 ? 0.5 : i / (numPosts - 1);
+    const px = x1 + t * dx, py = y1 + t * dy;
+    elements.push(
+      <mesh key={`post-${i}`} position={[px, py, baseZ + cb.postHeight / 2]}>
+        <boxGeometry args={[cb.postWidth, cb.postWidth, cb.postHeight]} />
+        <meshStandardMaterial color={colors.campusPost} roughness={0.35} metalness={0.85} />
+      </mesh>
+    );
+  }
+
+  // Horizontal rails — top and bottom of mesh area
+  const railBottomZ = baseZ + cb.wallHeight + 0.02;
+  const railTopZ = baseZ + cb.postHeight - cb.railThickness;
+  [railBottomZ, railTopZ].forEach((rz, ri) => {
+    elements.push(
+      <mesh key={`rail-${ri}`} position={[mx, my, rz + cb.railThickness / 2]} rotation={[0, 0, angle]}>
+        <boxGeometry args={[len, cb.railThickness, cb.railThickness]} />
+        <meshStandardMaterial color={colors.campusRail} roughness={0.35} metalness={0.85} />
+      </mesh>
+    );
+  });
+
+  // Semi-transparent mesh panel between rails
+  const meshHeight = railTopZ - railBottomZ - cb.railThickness;
+  if (meshHeight > 0) {
+    elements.push(
+      <mesh key="mesh" position={[mx, my, railBottomZ + cb.railThickness + meshHeight / 2]} rotation={[0, 0, angle]}>
+        <boxGeometry args={[len, cb.wallThickness * 0.3, meshHeight]} />
+        <meshStandardMaterial
+          color={colors.campusMesh}
+          roughness={0.5}
+          metalness={0.7}
+          transparent
+          opacity={cb.meshOpacity}
+        />
+      </mesh>
+    );
+  }
+
+  return <>{elements}</>;
+};
+
+const CampusBoundary = ({ config }) => {
+  const segments = useMemo(() => {
+    if (!campusHull || campusHull.length < 3) return [];
+    const result = [];
+    for (let i = 0; i < campusHull.length; i++) {
+      const p1 = campusHull[i];
+      const p2 = campusHull[(i + 1) % campusHull.length];
+      result.push({ x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y });
+    }
+    return result;
+  }, []);
+
+  return (
+    <group>
+      {segments.map((seg, i) => (
+        <CampusBoundarySegment key={i} {...seg} config={config} />
+      ))}
+    </group>
+  );
+};
+
+
 
 // ─────────────────────────────────────────────
 // STONE PATH  — uniform, centered stones
@@ -872,11 +1041,11 @@ const WaterDetails = ({ polygon }) => {
       let step = 0;
       while (step < 60) {
         const isInside = pointInPoly(px, py, centers);
-        const hasMargin = isInside && 
-                         pointInPoly(px + margin, py, centers) && 
-                         pointInPoly(px - margin, py, centers) && 
-                         pointInPoly(px, py + margin, centers) && 
-                         pointInPoly(px, py - margin, centers);
+        const hasMargin = isInside &&
+          pointInPoly(px + margin, py, centers) &&
+          pointInPoly(px - margin, py, centers) &&
+          pointInPoly(px, py + margin, centers) &&
+          pointInPoly(px, py - margin, centers);
         if (hasMargin) break;
         px = px * 0.94 + cx * 0.06;
         py = py * 0.94 + cy * 0.06;
@@ -1275,24 +1444,25 @@ const MapMesh = ({ polygon, isSelected, onClick, config }) => {
         </group>
       )}
 
-      {isPlot && isSelected && (
-        <>
-          <PlotFence
-            polygon={polygon}
-            gateEdgeIdx={plotFacingData[polygon.label]?.gateEdgeIdx ?? -1}
-            secondGateEdgeIdx={plotFacingData[polygon.label]?.secondGateEdgeIdx ?? -1}
-            config={config}
-          />
-          <PlotDetails
-            polygon={polygon}
-            gateEdgeIdx={plotFacingData[polygon.label]?.gateEdgeIdx ?? -1}
-            secondGateEdgeIdx={plotFacingData[polygon.label]?.secondGateEdgeIdx ?? -1}
-            cx={cx}
-            cy={cy}
-            config={config}
-          />
-        </>
+      {isPlot && (
+        <PlotBoundaryWall
+          polygon={polygon}
+          gateEdgeIdx={plotFacingData[polygon.label]?.gateEdgeIdx ?? -1}
+          secondGateEdgeIdx={plotFacingData[polygon.label]?.secondGateEdgeIdx ?? -1}
+          config={config}
+        />
       )}
+      {isPlot && isSelected && (
+        <PlotDetails
+          polygon={polygon}
+          gateEdgeIdx={plotFacingData[polygon.label]?.gateEdgeIdx ?? -1}
+          secondGateEdgeIdx={plotFacingData[polygon.label]?.secondGateEdgeIdx ?? -1}
+          cx={cx}
+          cy={cy}
+          config={config}
+        />
+      )}
+
 
       {isPlot && polygon.id_num && (
         <Text position={[cx, cy, 0.35]} fontSize={0.8} color="white" anchorX="center" anchorY="middle">
@@ -1472,10 +1642,15 @@ const InteractiveMap3D = () => {
           ))}
         </group>
 
+        <group rotation={[-Math.PI / 2, 0, 0]}>
+          <CampusBoundary config={mapConfig} />
+        </group>
+
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.05, 0]} receiveShadow>
           <planeGeometry args={[mapConfig.geometry.groundSize, mapConfig.geometry.groundSize]} />
           <meshLambertMaterial color={hexToThreeColor(mapConfig.colors.ground)} />
         </mesh>
+
       </Canvas>
 
       <div className="view-controls">
