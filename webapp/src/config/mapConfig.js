@@ -29,6 +29,11 @@ export const DEFAULT_MAP_CONFIG = {
     campusPost: "#2c2c2c", // Dark metal posts
     campusMesh: "#1a1a1a", // Black chain-link mesh
     campusRail: "#2c2c2c", // Dark metal rails
+    // Gazebo colors
+    gazeboFrame: "#1a1a1a", // Deep black metal
+    gazeboBase: "#a0a0a0", // Stone grey
+    gazeboWood: "#8b4513", // Saddle brown wood
+    gazeboRoof: "#2a2a2a", // Dark graphite roof
   },
   geometry: {
     plotDepth: 0.3,
@@ -41,6 +46,7 @@ export const DEFAULT_MAP_CONFIG = {
   // Plot boundary wall — grey concrete + horizontal metal slat plates
   plotBoundary: {
     isVisible: true,         // Toggle visibility
+    showAllPlots: false,      // Show all plot walls by default
     wallHeight: 0.4,         // Concrete wall height
     wallThickness: 0.08,     // Wall depth/thickness
     pillarWidth: 0.14,       // Pillar cross-section size
@@ -63,6 +69,12 @@ export const DEFAULT_MAP_CONFIG = {
     railThickness: 0.05,     // Horizontal rail cross-section
     padding: 4.5,            // Outward offset from development perimeter
     surfaceZ: 0.01,          // Base Z position
+  },
+  // Feature toggle and common settings
+  plotFeature: {
+    type: 'gazebo',          // 'house' or 'gazebo'
+    houseScale: 1.0,         // Overall scale for house
+    gazeboScale: 1.25,       // Overall scale for gazebo
   },
 };
 

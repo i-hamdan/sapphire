@@ -7,6 +7,7 @@ import campusPerimeterData from '../assets/campus_perimeter.json';
 
 import { generateRoadGeometries } from '../utils/RoadGenerator';
 import { Farmhouse } from './Farmhouse';
+import { Gazebo } from './Gazebo';
 import { DEFAULT_MAP_CONFIG, hexToThreeColor } from '../config/mapConfig';
 import './InteractiveMap.css';
 
@@ -179,9 +180,9 @@ const CameraController = ({ selectedPlot, isResetting, onResetComplete }) => {
     } else if (isResetting) {
       targetPos.set(0, 100, 50);
       targetLook.set(0, 0, 0);
-      camera.position.lerp(targetPos, 3 * delta);
-      controlsRef.current.target.lerp(targetLook, 3 * delta);
-      if (camera.position.distanceTo(targetPos) < 0.5 && controlsRef.current.target.distanceTo(targetLook) < 0.5) {
+      camera.position.lerp(targetPos, 2 * delta);
+      controlsRef.current.target.lerp(targetLook, 2 * delta);
+      if (camera.position.distanceTo(targetPos) < 1.0 && controlsRef.current.target.distanceTo(targetLook) < 1.0) {
         onResetComplete();
       }
     }
@@ -193,9 +194,10 @@ const CameraController = ({ selectedPlot, isResetting, onResetComplete }) => {
       ref={controlsRef}
       enableDamping
       dampingFactor={0.05}
-      minDistance={2}
-      maxDistance={800}
-      maxPolarAngle={Math.PI / 2.1}
+      minDistance={selectedPlot ? 2 : 0.1}
+      maxDistance={selectedPlot ? 800 : 10000}
+      maxPolarAngle={selectedPlot ? Math.PI / 2.1 : Math.PI / 1.5}
+      makeDefault
     />
 
   );
@@ -1447,11 +1449,21 @@ const MapMesh = ({ polygon, isSelected, onClick, config }) => {
           position={[cx, cy, 0.3]}
           rotation={[Math.PI / 2, (plotFacingData[polygon.label]?.angle || 0) + HOUSE_FRONT_OFFSET, 0]}
         >
-          <Farmhouse scale={houseScale} isVisible={isSelected} />
+          {config.plotFeature?.type === 'house' ? (
+            <Farmhouse 
+              scale={houseScale * (config.plotFeature.houseScale || 1)} 
+              isVisible={isSelected} 
+            />
+          ) : (
+            <Gazebo 
+              scale={houseScale * (config.plotFeature.gazeboScale || 1.25)} 
+              isVisible={isSelected} 
+            />
+          )}
         </group>
       )}
 
-      {isPlot && isSelected && config.plotBoundary.isVisible && (
+      {isPlot && (config.plotBoundary.showAllPlots || isSelected) && config.plotBoundary.isVisible && (
         <PlotBoundaryWall
           polygon={polygon}
           gateEdgeIdx={plotFacingData[polygon.label]?.gateEdgeIdx ?? -1}
