@@ -1,0 +1,287 @@
+{
+  "Plot 2": {
+    "angle": -3.0897523499507034,
+    "gateEdgeIdx": 8,
+    "secondGateEdgeIdx": -1
+  },
+  "Plot 1": {
+    "angle": 0.051597354685236366,
+    "gateEdgeIdx": 5,
+    "secondGateEdgeIdx": -1
+  },
+  "Plot 3": {
+    "angle": 0.037860687264637614,
+    "gateEdgeIdx": 6,
+    "secondGateEdgeIdx": -1
+  },
+  "Plot 55": {
+    "angle": 0.039779998471026645,
+    "gateEdgeIdx": 3,
+    "secondGateEdgeIdx": -1
+  },
+  "Plot 4": {
+    "angle": -3.0855765500466137,
+    "gateEdgeIdx": 1,
+    "secondGateEdgeIdx": -1
+  },
+  "Plot 47": {
+    "angle": 0.011110653897607242,
+    "gateEdgeIdx": 5,
+    "secondGateEdgeIdx": -1
+  },
+  "Plot 57": {
+    "angle": -1.5662092030054993,
+    "gateEdgeIdx": 6,
+    "secondGateEdgeIdx": -1
+  },
+  "Plot 48": {
+    "angle": -3.121393381008725,
+    "gateEdgeIdx": 1,
+    "secondGateEdgeIdx": -1
+  },
+  "Plot 45": {
+    "angle": -1.5662092030054982,
+    "gateEdgeIdx": 2,
+    "secondGateEdgeIdx": -1
+  },
+  "Plot 46": {
+    "angle": -1.5662092030055002,
+    "gateEdgeIdx": 2,
+    "secondGateEdgeIdx": 4
+  },
+  "Plot 49": {
+    "angle": -1.554949792810974,
+    "gateEdgeIdx": 5,
+    "secondGateEdgeIdx": 3
+  },
+  "Plot 50": {
+    "angle": -1.5549497928109737,
+    "gateEdgeIdx": 3,
+    "secondGateEdgeIdx": -1
+  },
+  "Plot 51": {
+    "angle": -1.554949792810973,
+    "gateEdgeIdx": 5,
+    "secondGateEdgeIdx": -1
+  },
+  "Plot 52": {
+    "angle": -1.5549497928109735,
+    "gateEdgeIdx": 2,
+    "secondGateEdgeIdx": -1
+  },
+  "Plot 53": {
+    "angle": -1.5549497928109728,
+    "gateEdgeIdx": 2,
+    "secondGateEdgeIdx": -1
+  },
+  "Plot 54": {
+    "angle": -1.5549497928109728,
+    "gateEdgeIdx": 2,
+    "secondGateEdgeIdx": 4
+  },
+  "Plot 5": {
+    "angle": -3.108492164874455,
+    "gateEdgeIdx": 2,
+    "secondGateEdgeIdx": 4
+  },
+  "Plot 6": {
+    "angle": -1.5511909959376915,
+    "gateEdgeIdx": 13,
+    "secondGateEdgeIdx": -1
+  },
+  "Plot 43": {
+    "angle": 0.017674926879774913,
+    "gateEdgeIdx": 5,
+    "secondGateEdgeIdx": 7
+  },
+  "Plot 37": {
+    "angle": -3.121744143903667,
+    "gateEdgeIdx": 1,
+    "secondGateEdgeIdx": 7
+  },
+  "Plot 36": {
+    "angle": 0.022984457441451805,
+    "gateEdgeIdx": 5,
+    "secondGateEdgeIdx": 7
+  },
+  "Plot 23": {
+    "angle": -3.115473776029209,
+    "gateEdgeIdx": 2,
+    "secondGateEdgeIdx": 0
+  },
+  "Plot 22": {
+    "angle": 0.021273386024061258,
+    "gateEdgeIdx": 6,
+    "secondGateEdgeIdx": 0
+  },
+  "Plot 9": {
+    "angle": 1.5802747159247588,
+    "gateEdgeIdx": 1,
+    "secondGateEdgeIdx": 3
+  },
+  "Plot 8": {
+    "angle": 1.580274715924759,
+    "gateEdgeIdx": 0,
+    "secondGateEdgeIdx": -1
+  },
+  "Plot 7": {
+    "angle": 1.6038421438138268,
+    "gateEdgeIdx": 2,
+    "secondGateEdgeIdx": -1
+  },
+  "Plot 44": {
+    "angle": 1.579970381340007,
+    "gateEdgeIdx": 7,
+    "secondGateEdgeIdx": -1
+  },
+  "Plot 42": {
+    "angle": 0.01767492687977517,
+    "gateEdgeIdx": 5,
+    "secondGateEdgeIdx": -1
+  },
+  "Plot 38": {
+    "angle": -3.1217441439036686,
+    "gateEdgeIdx": 1,
+    "secondGateEdgeIdx": -1
+  },
+  "Plot 35": {
+    "angle": 0.02298445744145211,
+    "gateEdgeIdx": 5,
+    "secondGateEdgeIdx": -1
+  },
+  "Plot 24": {
+    "angle": -3.11547377602921,
+    "gateEdgeIdx": 1,
+    "secondGateEdgeIdx": -1
+  },
+  "Plot 21": {
+    "angle": 0.015150355874769829,
+    "gateEdgeIdx": 6,
+    "secondGateEdgeIdx": -1
+  },
+  "Plot 10": {
+    "angle": -3.104572537715863,
+    "gateEdgeIdx": 3,
+    "secondGateEdgeIdx": -1
+  },
+  "Plot 41": {
+    "angle": 0.017674926879774108,
+    "gateEdgeIdx": 5,
+    "secondGateEdgeIdx": -1
+  },
+  "Plot 39": {
+    "angle": -3.1217441439036677,
+    "gateEdgeIdx": 2,
+    "secondGateEdgeIdx": -1
+  },
+  "Plot 34": {
+    "angle": 0.022984457441450935,
+    "gateEdgeIdx": 7,
+    "secondGateEdgeIdx": -1
+  },
+  "Plot 25": {
+    "angle": -3.1154737760292095,
+    "gateEdgeIdx": 1,
+    "secondGateEdgeIdx": -1
+  },
+  "Plot 20": {
+    "angle": 0.046324450700606576,
+    "gateEdgeIdx": 8,
+    "secondGateEdgeIdx": -1
+  },
+  "Plot 11": {
+    "angle": -3.0868528735399123,
+    "gateEdgeIdx": 3,
+    "secondGateEdgeIdx": -1
+  },
+  "Plot 12": {
+    "angle": 3.141592653589793,
+    "gateEdgeIdx": 2,
+    "secondGateEdgeIdx": -1
+  },
+  "Plot 56": {
+    "angle": 0.017674926879772943,
+    "gateEdgeIdx": 13,
+    "secondGateEdgeIdx": -1
+  },
+  "Plot 40": {
+    "angle": -3.1217441439036673,
+    "gateEdgeIdx": 2,
+    "secondGateEdgeIdx": -1
+  },
+  "Plot 33": {
+    "angle": 0.022984457441452378,
+    "gateEdgeIdx": 6,
+    "secondGateEdgeIdx": -1
+  },
+  "Plot 26": {
+    "angle": -3.115473776029209,
+    "gateEdgeIdx": 2,
+    "secondGateEdgeIdx": -1
+  },
+  "Plot 19": {
+    "angle": 0.014284742587396565,
+    "gateEdgeIdx": 6,
+    "secondGateEdgeIdx": -1
+  },
+  "Plot 32": {
+    "angle": 0.022984457441450015,
+    "gateEdgeIdx": 9,
+    "secondGateEdgeIdx": -1
+  },
+  "Plot 27": {
+    "angle": -3.1154737760292095,
+    "gateEdgeIdx": 1,
+    "secondGateEdgeIdx": -1
+  },
+  "Plot 18": {
+    "angle": 0.03382168428302213,
+    "gateEdgeIdx": 5,
+    "secondGateEdgeIdx": -1
+  },
+  "Plot 13": {
+    "angle": -3.102397051662738,
+    "gateEdgeIdx": 2,
+    "secondGateEdgeIdx": -1
+  },
+  "Plot 14": {
+    "angle": -3.102397051662738,
+    "gateEdgeIdx": 3,
+    "secondGateEdgeIdx": -1
+  },
+  "Plot 31": {
+    "angle": 0.0229844574414504,
+    "gateEdgeIdx": 6,
+    "secondGateEdgeIdx": -1
+  },
+  "Plot 28": {
+    "angle": -3.11547377602921,
+    "gateEdgeIdx": 1,
+    "secondGateEdgeIdx": -1
+  },
+  "Plot 17": {
+    "angle": 0.033821684283022665,
+    "gateEdgeIdx": 5,
+    "secondGateEdgeIdx": -1
+  },
+  "Plot 15": {
+    "angle": -3.102397051662738,
+    "gateEdgeIdx": 3,
+    "secondGateEdgeIdx": -1
+  },
+  "Plot 30": {
+    "angle": 0.03748243669166161,
+    "gateEdgeIdx": 6,
+    "secondGateEdgeIdx": -1
+  },
+  "Plot 29": {
+    "angle": -3.1154737760292113,
+    "gateEdgeIdx": 2,
+    "secondGateEdgeIdx": -1
+  },
+  "Plot 16": {
+    "angle": 0.033821684283022416,
+    "gateEdgeIdx": 7,
+    "secondGateEdgeIdx": -1
+  }
+}

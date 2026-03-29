@@ -9,8 +9,10 @@ import { generateRoadGeometries } from '../utils/RoadGenerator';
 import { Farmhouse } from './Farmhouse';
 import { Gazebo } from './Gazebo';
 import { SoldSign } from './SoldSign';
+import { MainGate } from './MainGate';
 import { DEFAULT_MAP_CONFIG, hexToThreeColor } from '../config/mapConfig';
 import plotDetails from '../assets/plot_details.json';
+import plotFacingData from '../assets/plot_facing_data.json';
 import './InteractiveMap.css';
 
 const viewWidth = 1696;
@@ -72,85 +74,7 @@ const createGeometry = (points, type) => {
   };
 };
 
-// ─────────────────────────────────────────────
-// PLOT FACING DATA
-// ─────────────────────────────────────────────
-const computePlotFacingData = (data) => {
-  const roads = data.filter(d => d.type === 'road');
-  const plots = data.filter(d => d.type === 'plot');
-  const result = {};
-
-  plots.forEach(plot => {
-    const { cx, cy } = createGeometry(plot.points, true, false);
-    const isIntersection = INTERSECTION_PLOTS.has(String(plot.label).replace(/^Plot /, ''));
-
-    const pts3D = plot.points.map(p => ({
-      x: (p[0] - viewWidth / 2) * SCALE,
-      y: -(p[1] - viewHeight / 2) * SCALE,
-    }));
-
-    const n = pts3D.length;
-    const isClosed =
-      Math.abs(pts3D[0].x - pts3D[n - 1].x) < 0.001 &&
-      Math.abs(pts3D[0].y - pts3D[n - 1].y) < 0.001;
-    const edgeCount = isClosed ? n - 1 : n;
-
-    const contacts = [];
-
-    roads.forEach(road => {
-      road.points.forEach((rp, i) => {
-        if (i >= road.points.length - 1) return;
-        const ax = (road.points[i][0] - viewWidth / 2) * SCALE;
-        const ay = -(road.points[i][1] - viewHeight / 2) * SCALE;
-        const bx = (road.points[i + 1][0] - viewWidth / 2) * SCALE;
-        const by = -(road.points[i + 1][1] - viewHeight / 2) * SCALE;
-
-        const dx = bx - ax, dy = by - ay;
-        const lenSq = dx * dx + dy * dy;
-        const t = lenSq > 0
-          ? Math.max(0, Math.min(1, ((cx - ax) * dx + (cy - ay) * dy) / lenSq)) : 0;
-
-        const closestX = ax + t * dx;
-        const closestY = ay + t * dy;
-        const dist = Math.hypot(cx - closestX, cy - closestY);
-        const angle = Math.atan2(closestY - cy, closestX - cx);
-
-        let bestEdgeDist = Infinity, bestEdgeIdx = 0;
-        for (let j = 0; j < edgeCount; j++) {
-          const pA = pts3D[j], pB = pts3D[(j + 1) % edgeCount];
-          const mx = (pA.x + pB.x) / 2, my = (pA.y + pB.y) / 2;
-          const d = Math.hypot(mx - closestX, my - closestY);
-          if (d < bestEdgeDist) { bestEdgeDist = d; bestEdgeIdx = j; }
-        }
-        contacts.push({ dist, angle, edgeIdx: bestEdgeIdx });
-      });
-    });
-
-    contacts.sort((a, b) => a.dist - b.dist);
-    const primary = contacts[0] ?? { angle: 0, edgeIdx: 0 };
-    let secondaryEdgeIdx = -1;
-
-    if (isIntersection) {
-      const MIN_ANGLE_DIFF = Math.PI / 3;
-      for (const c of contacts) {
-        if (c.edgeIdx === primary.edgeIdx) continue;
-        const angleDiff = Math.abs(((c.angle - primary.angle + Math.PI * 3) % (Math.PI * 2)) - Math.PI);
-        if (angleDiff > MIN_ANGLE_DIFF) { secondaryEdgeIdx = c.edgeIdx; break; }
-      }
-    }
-
-    result[plot.label] = {
-      angle: primary.angle,
-      gateEdgeIdx: primary.edgeIdx,
-      secondGateEdgeIdx: secondaryEdgeIdx,
-    };
-  });
-
-  return result;
-};
-
 const cleanMapData = vectorsData;
-const plotFacingData = computePlotFacingData(cleanMapData);
 const HOUSE_FRONT_OFFSET = -Math.PI / 2;
 
 // ─────────────────────────────────────────────
@@ -436,22 +360,48 @@ const CampusBoundarySegment = ({ x1, y1, x2, y2, config }) => {
 };
 
 const CampusBoundary = ({ config }) => {
+  const entranceMarkers = useMemo(() => {
+    // Gap coordinates from campus_perimeter.json Points 2 and 3
+    const p1 = { x: (1097 - viewWidth / 2) * SCALE, y: -(298 - viewHeight / 2) * SCALE };
+    const p2 = { x: (1065 - viewWidth / 2) * SCALE, y: -(298 - viewHeight / 2) * SCALE };
+    return { p1, p2 };
+  }, []);
+
   const segments = useMemo(() => {
     if (!campusHull || campusHull.length < 3) return [];
     const result = [];
+    const ep1 = entranceMarkers.p1;
+    const ep2 = entranceMarkers.p2;
+
     for (let i = 0; i < campusHull.length; i++) {
       const p1 = campusHull[i];
       const p2 = campusHull[(i + 1) % campusHull.length];
-      result.push({ x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y });
+      
+      // Check if this is the entrance segment
+      const isEntrance = (
+        (Math.abs(p1.x - ep1.x) < 0.01 && Math.abs(p1.y - ep1.y) < 0.01 && Math.abs(p2.x - ep2.x) < 0.01 && Math.abs(p2.y - ep2.y) < 0.01) ||
+        (Math.abs(p1.x - ep2.x) < 0.01 && Math.abs(p1.y - ep2.y) < 0.01 && Math.abs(p2.x - ep1.x) < 0.01 && Math.abs(p2.y - ep1.y) < 0.01)
+      );
+
+      if (!isEntrance) {
+        result.push({ x1: p1.x, y1: p1.y, x2: p2.x, y2: p2.y });
+      }
     }
     return result;
-  }, []);
+  }, [entranceMarkers]);
 
   return (
     <group>
       {segments.map((seg, i) => (
         <CampusBoundarySegment key={i} {...seg} config={config} />
       ))}
+      <MainGate 
+        x1={entranceMarkers.p1.x} 
+        y1={entranceMarkers.p1.y} 
+        x2={entranceMarkers.p2.x} 
+        y2={entranceMarkers.p2.y} 
+        config={config} 
+      />
     </group>
   );
 };
@@ -1478,6 +1428,7 @@ const MapMesh = ({ polygon, isSelected, onClick, config }) => {
             <Gazebo 
               scale={houseScale * (config.plotFeature.gazeboScale || 1.25)} 
               isVisible={isSelected} 
+              config={config}
             />
           )}
         </group>

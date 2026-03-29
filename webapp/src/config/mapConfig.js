@@ -31,11 +31,17 @@ export const DEFAULT_MAP_CONFIG = {
     campusPost: "#2c2c2c", // Dark metal posts
     campusMesh: "#1a1a1a", // Black chain-link mesh
     campusRail: "#2c2c2c", // Dark metal rails
+    // Main Gate
+    gatePillar: "#1e12c3ff",
+    gatePillarCap: "#a8a39d",
+    gateArch: "#1a1a1a",
+    gateSign: "#0b1704",
+    gateText: "#c8d96a",
     // Gazebo colors
     gazeboFrame: "#1a1a1a", // Deep black metal
     gazeboBase: "#a0a0a0", // Stone grey
     gazeboWood: "#8b4513", // Saddle brown wood
-    gazeboRoof: "#2a2a2a", // Dark graphite roof
+    gazeboRoof: "#4f4e4cff", // Dark graphite roof
   },
   geometry: {
     plotDepth: 0.3,
@@ -76,7 +82,7 @@ export const DEFAULT_MAP_CONFIG = {
   plotFeature: {
     type: 'gazebo',          // 'house' or 'gazebo'
     houseScale: 1.0,         // Overall scale for house
-    gazeboScale: 0.6,       // Overall scale for gazebo
+    gazeboScale: 0.8,       // Overall scale for gazebo
   },
 };
 
