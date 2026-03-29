@@ -2,6 +2,8 @@ export const DEFAULT_MAP_CONFIG = {
   colors: {
     plot: "#06440dff", // muted purple/blue
     plotActive: "#047a1dff", // bright gold
+    plotSold: "#333333ff", // Dark gray for sold
+    plotHighInterest: "#ffd700", // Gold for high interest
     resort: "#884a04ff", // Pinkish/Purple
     green: "#179607ff", // Forest Green
     road: "#87480aff", // Asphalt Dark Gray

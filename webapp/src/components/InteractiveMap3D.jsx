@@ -9,6 +9,7 @@ import { generateRoadGeometries } from '../utils/RoadGenerator';
 import { Farmhouse } from './Farmhouse';
 import { Gazebo } from './Gazebo';
 import { DEFAULT_MAP_CONFIG, hexToThreeColor } from '../config/mapConfig';
+import plotDetails from '../assets/plot_details.json';
 import './InteractiveMap.css';
 
 const viewWidth = 1696;
@@ -1338,7 +1339,20 @@ const MapMesh = ({ polygon, isSelected, onClick, config }) => {
   );
 
   let colorHex = config.colors[polyType] || '#555555';
-  if (isPlot) colorHex = isSelected ? config.colors.plotActive : config.colors.plot;
+  
+  const details = isPlot ? plotDetails[polygon.id_num] : null;
+
+  if (isPlot) {
+    if (isSelected) {
+      colorHex = config.colors.plotActive;
+    } else if (details?.isSold) {
+      colorHex = config.colors.plotSold;
+    } else if (details?.isHighInterest) {
+      colorHex = config.colors.plotHighInterest;
+    } else {
+      colorHex = config.colors.plot;
+    }
+  }
   const color = hexToThreeColor(colorHex);
 
   const plotMinDim = Math.min(width, height);
@@ -1742,22 +1756,36 @@ const InteractiveMap3D = () => {
         <div className="panel-drag"></div>
         <div className="panel-header">
           <div>
-            <div className="plot-name" id="pName">Farm {selectedPlot ? selectedPlot.label : ''}</div>
-            <div className="plot-status status-available" id="pStatus">Available</div>
+            <div className="plot-name" id="pName">Farm {selectedPlot ? selectedPlot.id_num : ''}</div>
+            <div className={`plot-status ${selectedPlot && plotDetails[selectedPlot.id_num]?.isSold ? 'status-sold' : 'status-available'}`} id="pStatus">
+              {selectedPlot && plotDetails[selectedPlot.id_num]?.isSold ? 'Sold Out' : 'Available'}
+            </div>
           </div>
           <button className="btn-close" onClick={resetCamera}>✕</button>
         </div>
-        <div className="plot-price" id="pPrice">Price on Request</div>
+        <div className="plot-price" id="pPrice">
+          {selectedPlot && plotDetails[selectedPlot.id_num]?.isHighInterest ? '🔥🔥 High interest' : 'Price on Request'}
+        </div>
         <div className="plot-stats">
           <div className="stat-box">
             <div className="stat-val">{selectedPlot ? selectedPlot.area || 'N/A' : '—'}</div>
             <div className="stat-lbl">Sq. Ft</div>
           </div>
+          <div className="stat-box">
+            <div className="stat-val" id="pFacing">
+              {selectedPlot && plotDetails[selectedPlot.id_num] 
+                ? `${plotDetails[selectedPlot.id_num].length_ft}' x ${plotDetails[selectedPlot.id_num].breadth_ft}'`
+                : '—'}
+            </div>
+            <div className="stat-lbl">Dimensions</div>
+          </div>
           <div className="stat-box"><div className="stat-val" id="pFacing">East</div><div className="stat-lbl">Facing</div></div>
-          <div className="stat-box"><div className="stat-val">{selectedPlot ? selectedPlot.label : '—'}</div><div className="stat-lbl">Farm No.</div></div>
         </div>
         <div className="plot-features">
           <span className="feature-tag">Premium</span>
+          {selectedPlot && plotDetails[selectedPlot.id_num]?.isHighInterest && (
+            <span className="feature-tag" style={{ background: '#ffd700', color: '#000' }}>High interest</span>
+          )}
           <span className="feature-tag">Park Facing</span>
         </div>
         <div className="cta-row">

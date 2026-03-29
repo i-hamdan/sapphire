@@ -394,9 +394,9 @@
   border: 1px solid rgba(200,217,106,.38);
 }
 .status-sold {
-  background: rgba(180,60,60,.13);
+  background: rgba(224, 112, 112, 0.13);
   color: #e07070;
-  border: 1px solid rgba(180,60,60,.38);
+  border: 1px solid rgba(224, 112, 112, 0.38);
 }
 .status-reserved {
   background: rgba(200,140,50,.13);

@@ -1,0 +1,458 @@
+{
+  "2": {
+    "area_sqft": 55211.0,
+    "length_ft": 288.4,
+    "breadth_ft": 191.4,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "1": {
+    "area_sqft": 32809.5,
+    "length_ft": 156.6,
+    "breadth_ft": 209.5,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "3": {
+    "area_sqft": 14390.5,
+    "length_ft": 70.7,
+    "breadth_ft": 203.6,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "55": {
+    "area_sqft": 8366.0,
+    "length_ft": 53.7,
+    "breadth_ft": 155.8,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "4": {
+    "area_sqft": 8945.5,
+    "length_ft": 93.7,
+    "breadth_ft": 95.5,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "47": {
+    "area_sqft": 10304.5,
+    "length_ft": 82.4,
+    "breadth_ft": 125.0,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "57": {
+    "area_sqft": 17072.0,
+    "length_ft": 100.5,
+    "breadth_ft": 169.8,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "48": {
+    "area_sqft": 7297.0,
+    "length_ft": 83.6,
+    "breadth_ft": 87.3,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "45": {
+    "area_sqft": 7999.0,
+    "length_ft": 93.0,
+    "breadth_ft": 86.0,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "46": {
+    "area_sqft": 7405.5,
+    "length_ft": 87.5,
+    "breadth_ft": 84.6,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "49": {
+    "area_sqft": 7356.0,
+    "length_ft": 88.8,
+    "breadth_ft": 82.9,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "50": {
+    "area_sqft": 14473.5,
+    "length_ft": 96.7,
+    "breadth_ft": 149.7,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "51": {
+    "area_sqft": 12076.0,
+    "length_ft": 96.7,
+    "breadth_ft": 124.9,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "52": {
+    "area_sqft": 7507.0,
+    "length_ft": 97.6,
+    "breadth_ft": 76.9,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "53": {
+    "area_sqft": 7618.5,
+    "length_ft": 100.0,
+    "breadth_ft": 76.2,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "54": {
+    "area_sqft": 7954.0,
+    "length_ft": 105.8,
+    "breadth_ft": 75.2,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "5": {
+    "area_sqft": 10828.0,
+    "length_ft": 77.1,
+    "breadth_ft": 140.4,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "6": {
+    "area_sqft": 3763.0,
+    "length_ft": 99.3,
+    "breadth_ft": 37.9,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "43": {
+    "area_sqft": 8009.0,
+    "length_ft": 88.0,
+    "breadth_ft": 91.0,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "37": {
+    "area_sqft": 8064.5,
+    "length_ft": 88.8,
+    "breadth_ft": 90.8,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "36": {
+    "area_sqft": 7857.5,
+    "length_ft": 86.7,
+    "breadth_ft": 90.6,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "23": {
+    "area_sqft": 7837.0,
+    "length_ft": 87.1,
+    "breadth_ft": 90.0,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "22": {
+    "area_sqft": 7801.5,
+    "length_ft": 86.9,
+    "breadth_ft": 89.8,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "9": {
+    "area_sqft": 11439.5,
+    "length_ft": 126.9,
+    "breadth_ft": 90.1,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "8": {
+    "area_sqft": 11945.0,
+    "length_ft": 90.2,
+    "breadth_ft": 132.5,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "7": {
+    "area_sqft": 9397.0,
+    "length_ft": 109.5,
+    "breadth_ft": 85.8,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "44": {
+    "area_sqft": 18301.5,
+    "length_ft": 103.6,
+    "breadth_ft": 176.7,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "42": {
+    "area_sqft": 7939.0,
+    "length_ft": 88.1,
+    "breadth_ft": 90.1,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "38": {
+    "area_sqft": 7972.0,
+    "length_ft": 88.3,
+    "breadth_ft": 90.3,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "35": {
+    "area_sqft": 7890.5,
+    "length_ft": 87.8,
+    "breadth_ft": 89.8,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "24": {
+    "area_sqft": 7836.5,
+    "length_ft": 87.5,
+    "breadth_ft": 89.5,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "21": {
+    "area_sqft": 7815.0,
+    "length_ft": 87.9,
+    "breadth_ft": 88.9,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "10": {
+    "area_sqft": 11254.0,
+    "length_ft": 124.9,
+    "breadth_ft": 90.1,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "41": {
+    "area_sqft": 7238.0,
+    "length_ft": 97.1,
+    "breadth_ft": 74.5,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "39": {
+    "area_sqft": 8075.0,
+    "length_ft": 87.4,
+    "breadth_ft": 92.4,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "34": {
+    "area_sqft": 8038.5,
+    "length_ft": 88.2,
+    "breadth_ft": 91.1,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "25": {
+    "area_sqft": 8045.0,
+    "length_ft": 89.2,
+    "breadth_ft": 90.2,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "20": {
+    "area_sqft": 7979.5,
+    "length_ft": 87.9,
+    "breadth_ft": 90.8,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "11": {
+    "area_sqft": 10265.5,
+    "length_ft": 113.5,
+    "breadth_ft": 90.4,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "12": {
+    "area_sqft": 8771.5,
+    "length_ft": 99.5,
+    "breadth_ft": 88.1,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "56": {
+    "area_sqft": 3662.5,
+    "length_ft": 46.2,
+    "breadth_ft": 79.4,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "40": {
+    "area_sqft": 9516.0,
+    "length_ft": 87.3,
+    "breadth_ft": 108.9,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "33": {
+    "area_sqft": 9748.5,
+    "length_ft": 88.5,
+    "breadth_ft": 110.1,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "26": {
+    "area_sqft": 8085.0,
+    "length_ft": 88.9,
+    "breadth_ft": 90.9,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "19": {
+    "area_sqft": 8044.5,
+    "length_ft": 88.7,
+    "breadth_ft": 90.7,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "32": {
+    "area_sqft": 9954.0,
+    "length_ft": 138.7,
+    "breadth_ft": 71.8,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "27": {
+    "area_sqft": 8163.0,
+    "length_ft": 89.4,
+    "breadth_ft": 91.3,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "18": {
+    "area_sqft": 8131.0,
+    "length_ft": 89.2,
+    "breadth_ft": 91.2,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "13": {
+    "area_sqft": 9895.5,
+    "length_ft": 113.3,
+    "breadth_ft": 87.3,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "14": {
+    "area_sqft": 10214.5,
+    "length_ft": 111.7,
+    "breadth_ft": 91.5,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "31": {
+    "area_sqft": 9136.5,
+    "length_ft": 107.0,
+    "breadth_ft": 85.4,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "28": {
+    "area_sqft": 8284.0,
+    "length_ft": 89.6,
+    "breadth_ft": 92.5,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "17": {
+    "area_sqft": 8249.5,
+    "length_ft": 89.9,
+    "breadth_ft": 91.8,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "15": {
+    "area_sqft": 9077.0,
+    "length_ft": 98.2,
+    "breadth_ft": 92.4,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "30": {
+    "area_sqft": 6500.0,
+    "length_ft": 72.7,
+    "breadth_ft": 89.4,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "29": {
+    "area_sqft": 8433.5,
+    "length_ft": 89.4,
+    "breadth_ft": 94.3,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  },
+  "16": {
+    "area_sqft": 8435.5,
+    "length_ft": 90.4,
+    "breadth_ft": 93.3,
+    "isSold": false,
+    "isHighInterest": false,
+    "notes": ""
+  }
+}
