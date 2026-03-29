@@ -1,17 +1,17 @@
 export const DEFAULT_MAP_CONFIG = {
   colors: {
-    plot: "#6b6bf0ff", // muted purple/blue
+    plot: "#06440dff", // muted purple/blue
     plotActive: "#047a1dff", // bright gold
-    resort: "#884488", // Pinkish/Purple
-    green: "#0d6402ff", // Forest Green
-    road: "#333333", // Asphalt Dark Gray
+    resort: "#884a04ff", // Pinkish/Purple
+    green: "#179607ff", // Forest Green
+    road: "#87480aff", // Asphalt Dark Gray
     highway: "#222222", // Deeper Asphalt
     background: "#0a1208",
     fog: "#0a1208",
     sunlight: "#fff3d0",
     ambientLight: "#7aaa5a",
     fillLight: "#3a6a8a",
-    ground: "#f4ca90eb",
+    ground: "#abbaa6eb",
     water: "#1a73e8", // Premium Google Blue
     waterDeep: "#0d47a1", // Deep blue
     waterShallow: "#4285f4", // Lighter blue
@@ -41,7 +41,7 @@ export const DEFAULT_MAP_CONFIG = {
     highwayDepth: 0.1,
     mountainDepth: 2.5,
     waterDepth: 0.15,
-    groundSize: 1000
+    groundSize: 300
   },
   // Plot boundary wall — grey concrete + horizontal metal slat plates
   plotBoundary: {
@@ -74,7 +74,7 @@ export const DEFAULT_MAP_CONFIG = {
   plotFeature: {
     type: 'gazebo',          // 'house' or 'gazebo'
     houseScale: 1.0,         // Overall scale for house
-    gazeboScale: 1.25,       // Overall scale for gazebo
+    gazeboScale: 0.6,       // Overall scale for gazebo
   },
 };
 
