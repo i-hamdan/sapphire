@@ -11,7 +11,7 @@
     "area_sqft": 32809.5,
     "length_ft": 156.6,
     "breadth_ft": 209.5,
-    "isSold": false,
+    "isSold": true,
     "isHighInterest": false,
     "notes": ""
   },
@@ -19,7 +19,7 @@
     "area_sqft": 14390.5,
     "length_ft": 70.7,
     "breadth_ft": 203.6,
-    "isSold": false,
+    "isSold": true,
     "isHighInterest": false,
     "notes": ""
   },
@@ -27,7 +27,7 @@
     "area_sqft": 8366.0,
     "length_ft": 53.7,
     "breadth_ft": 155.8,
-    "isSold": false,
+    "isSold": true,
     "isHighInterest": false,
     "notes": ""
   },
@@ -35,7 +35,7 @@
     "area_sqft": 8945.5,
     "length_ft": 93.7,
     "breadth_ft": 95.5,
-    "isSold": false,
+    "isSold": true,
     "isHighInterest": false,
     "notes": ""
   },
@@ -59,7 +59,7 @@
     "area_sqft": 7297.0,
     "length_ft": 83.6,
     "breadth_ft": 87.3,
-    "isSold": false,
+    "isSold": true,
     "isHighInterest": false,
     "notes": ""
   },
@@ -83,7 +83,7 @@
     "area_sqft": 7356.0,
     "length_ft": 88.8,
     "breadth_ft": 82.9,
-    "isSold": false,
+    "isSold": true,
     "isHighInterest": false,
     "notes": ""
   },
@@ -107,7 +107,7 @@
     "area_sqft": 7507.0,
     "length_ft": 97.6,
     "breadth_ft": 76.9,
-    "isSold": false,
+    "isSold": true,
     "isHighInterest": false,
     "notes": ""
   },
@@ -115,7 +115,7 @@
     "area_sqft": 7618.5,
     "length_ft": 100.0,
     "breadth_ft": 76.2,
-    "isSold": false,
+    "isSold": true,
     "isHighInterest": false,
     "notes": ""
   },
@@ -123,7 +123,7 @@
     "area_sqft": 7954.0,
     "length_ft": 105.8,
     "breadth_ft": 75.2,
-    "isSold": false,
+    "isSold": true,
     "isHighInterest": false,
     "notes": ""
   },
@@ -131,7 +131,7 @@
     "area_sqft": 10828.0,
     "length_ft": 77.1,
     "breadth_ft": 140.4,
-    "isSold": false,
+    "isSold": true,
     "isHighInterest": false,
     "notes": ""
   },
@@ -139,7 +139,7 @@
     "area_sqft": 3763.0,
     "length_ft": 99.3,
     "breadth_ft": 37.9,
-    "isSold": false,
+    "isSold": true,
     "isHighInterest": false,
     "notes": ""
   },
@@ -203,7 +203,7 @@
     "area_sqft": 9397.0,
     "length_ft": 109.5,
     "breadth_ft": 85.8,
-    "isSold": false,
+    "isSold": true,
     "isHighInterest": false,
     "notes": ""
   },

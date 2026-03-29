@@ -8,6 +8,7 @@ import campusPerimeterData from '../assets/campus_perimeter.json';
 import { generateRoadGeometries } from '../utils/RoadGenerator';
 import { Farmhouse } from './Farmhouse';
 import { Gazebo } from './Gazebo';
+import { SoldSign } from './SoldSign';
 import { DEFAULT_MAP_CONFIG, hexToThreeColor } from '../config/mapConfig';
 import plotDetails from '../assets/plot_details.json';
 import './InteractiveMap.css';
@@ -1435,7 +1436,12 @@ const MapMesh = ({ polygon, isSelected, onClick, config }) => {
   return (
     <group
       rotation={[-Math.PI / 2, 0, 0]}
-      onClick={(e) => { if (isPlot) { e.stopPropagation(); onClick(polygon); } }}
+      onClick={(e) => { 
+        if (isPlot && !details?.isSold) { 
+          e.stopPropagation(); 
+          onClick(polygon); 
+        } 
+      }}
       position={[0, yPos, 0]}
     >
       <mesh geometry={geometry} receiveShadow castShadow>
@@ -1458,7 +1464,7 @@ const MapMesh = ({ polygon, isSelected, onClick, config }) => {
       {polygon.type === 'water' && <WaterDetails polygon={polygon} />}
       {/* {polyType === 'mountain' && <MountainRange polygon={polygon} config={config} />} */}
 
-      {isPlot && (
+      {isPlot && !details?.isSold && (
         <group
           position={[cx, cy, 0.3]}
           rotation={[Math.PI / 2, (plotFacingData[polygon.label]?.angle || 0) + HOUSE_FRONT_OFFSET, 0]}
@@ -1474,6 +1480,15 @@ const MapMesh = ({ polygon, isSelected, onClick, config }) => {
               isVisible={isSelected} 
             />
           )}
+        </group>
+      )}
+
+      {isPlot && details?.isSold && (
+        <group
+          position={[cx + 1.5, cy + 1.5, 0.3]} // Offset from center
+          rotation={[Math.PI / 2, -1.555 + HOUSE_FRONT_OFFSET, 0]}
+        >
+          <SoldSign scale={houseScale * 0.8} />
         </group>
       )}
 
@@ -1677,7 +1692,7 @@ const InteractiveMap3D = () => {
         <group>
           {cleanMapData.map((polygon, index) => (
             <MapMesh
-              key={polygon.label || `poly-${index}`}
+              key={`${polygon.label || 'poly'}-${index}`}
               polygon={polygon}
               isSelected={selectedPlot && selectedPlot.label === polygon.label}
               onClick={handlePlotClick}
