@@ -13,6 +13,8 @@ import { MainGate } from './MainGate';
 import { DEFAULT_MAP_CONFIG, hexToThreeColor } from '../config/mapConfig';
 import plotDetails from '../assets/plot_details.json';
 import plotFacingData from '../assets/plot_facing_data.json';
+import { PhotoPin } from './PhotoPin';
+import { PanoramaViewer } from './PanoramaViewer';
 import './InteractiveMap.css';
 
 const viewWidth = 1696;
@@ -1468,6 +1470,18 @@ const MapMesh = ({ polygon, isSelected, onClick, config }) => {
           {polygon.id_num}
         </Text>
       )}
+
+      {/* Floating Photo Pin Rendering */}
+      {isPlot && config.photoPins?.some(p => p.plotId === polygon.id_num) && (
+        <PhotoPin 
+          position={[cx, cy, (config.photoPinStyle.baseHeight || 0.8)]} 
+          config={config} 
+          onClick={() => {
+            const pin = config.photoPins.find(p => p.plotId === polygon.id_num);
+            onClick({ ...polygon, photoPin: pin });
+          }}
+        />
+      )}
     </group>
   );
 };
@@ -1577,6 +1591,7 @@ const Traffic = ({ config }) => {
 // ─────────────────────────────────────────────
 const InteractiveMap3D = () => {
   const [selectedPlot, setSelectedPlot] = useState(null);
+  const [activePanorama, setActivePanorama] = useState(null);
   const [isResetting, setIsResetting] = useState(false);
   const [showConfig, setShowConfig] = useState(false);
   const [mapConfig, setMapConfig] = useState(DEFAULT_MAP_CONFIG);
@@ -1588,6 +1603,10 @@ const InteractiveMap3D = () => {
     setMapConfig(prev => ({ ...prev, [category]: { ...prev[category], [key]: value } }));
 
   const handlePlotClick = (plot) => {
+    if (plot.photoPin) {
+      setActivePanorama(plot.photoPin);
+      return;
+    }
     if (selectedPlot && selectedPlot.label === plot.label) {
       resetCamera();
     } else {
@@ -1703,6 +1722,22 @@ const InteractiveMap3D = () => {
                   onChange={(e) => handleToggleChange('campusBoundary', 'isVisible', e.target.checked)}
                 />
               </div>
+              <div className="theme-editor-item toggle">
+                <label>PHOTO PINS</label>
+                <input
+                  type="checkbox"
+                  checked={mapConfig.photoPinStyle.isVisible}
+                  onChange={(e) => handleToggleChange('photoPinStyle', 'isVisible', e.target.checked)}
+                />
+              </div>
+              <div className="theme-editor-item toggle">
+                <label>MATTE TEXTURE</label>
+                <input
+                  type="checkbox"
+                  checked={mapConfig.photoPinStyle.matteMode}
+                  onChange={(e) => handleToggleChange('photoPinStyle', 'matteMode', e.target.checked)}
+                />
+              </div>
             </div>
 
             <div className="theme-editor-section">
@@ -1763,6 +1798,15 @@ const InteractiveMap3D = () => {
           <a href="tel:+919644271804" className="btn-secondary" style={{ textDecoration: 'none' }}>📞</a>
         </div>
       </div>
+
+      {activePanorama && (
+        <PanoramaViewer 
+          isOpen={!!activePanorama}
+          onClose={() => setActivePanorama(null)}
+          photoUrl={activePanorama.photoUrl}
+          label={`Farm ${activePanorama.plotId} - ${activePanorama.label}`}
+        />
+      )}
     </div>
   );
 };

@@ -2,7 +2,7 @@ export const DEFAULT_MAP_CONFIG = {
   colors: {
     plot: "#06440dff", // muted purple/blue
     plotActive: "#047a1dff", // bright gold
-    plotSold: "#900c0cff", // Dark gray for sold
+    plotSold: "#777575ff", // Dark gray for sold
     plotHighInterest: "#ffd700", // Gold for high interest
     resort: "#884a04ff", // Pinkish/Purple
     green: "#179607ff", // Forest Green
@@ -84,6 +84,28 @@ export const DEFAULT_MAP_CONFIG = {
     houseScale: 1.0,         // Overall scale for house
     gazeboScale: 0.8,       // Overall scale for gazebo
   },
+  // Floating photo pins for specific plots
+  photoPins: [
+    {
+      plotId: "9",
+      photoUrl: "/assets/panoramic.jpg",
+      label: "Main Campus View"
+    }
+  ],
+  photoPinStyle: {
+    isVisible: true,
+    accentColor: "#f93b0bff",   // Main bubble color
+    iconColor: "#ffffffff",     // Camera body color
+    baseHeight: 2.8,          // Distance from the plot surface
+    floatAmplitude: 0.18,     // Vertical floating range
+    floatSpeed: 1.8,          // Vertical floating speed
+    swayAmplitude: 0.12,      // Side-to-side swivel range
+    swaySpeed: 0.5,           // Side-to-side swivel speed
+    pinScale: 3.0,            // Overall scale
+    matteMode: true,         // Toggle between glossy and matte-flat texture
+    showShadow: true,         // Toggle drop shadow
+    shadowOpacity: 0.25       // Darkness of the floor shadow
+  }
 };
 
 export const hexToThreeColor = (hex) => {
