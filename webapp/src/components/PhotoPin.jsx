@@ -1,9 +1,9 @@
-import React, { useRef } from 'react';
+import React, { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { RoundedBox } from '@react-three/drei';
 import * as THREE from 'three';
 
-export const PhotoPin = ({ position, onClick, config }) => {
+export const PhotoPin = React.memo(({ position, onClick, config }) => {
   const groupRef = useRef();
   const innerRef = useRef();
   
@@ -47,11 +47,16 @@ export const PhotoPin = ({ position, onClick, config }) => {
     }
   });
 
-  if (!isVisible) return null;
+  const { darkColor, highlightColor } = useMemo(() => {
+    if (!isVisible) return { darkColor: null, highlightColor: null };
+    const bColor = new THREE.Color(activeAccentColor);
+    return {
+      darkColor: bColor.clone().multiplyScalar(0.78),
+      highlightColor: bColor.clone().lerp(new THREE.Color("#ffffff"), 0.35)
+    };
+  }, [activeAccentColor, isVisible]);
 
-  const bubbleColor = new THREE.Color(activeAccentColor);
-  const darkColor = bubbleColor.clone().multiplyScalar(0.78);
-  const highlightColor = bubbleColor.clone().lerp(new THREE.Color("#ffffff"), 0.35);
+  if (!isVisible) return null;
 
   // Matte vs Glossy material properties
   const roughness = matteMode ? 0.92 : 0.08;
@@ -172,4 +177,4 @@ export const PhotoPin = ({ position, onClick, config }) => {
       </group>
     </group>
   );
-};
+});

@@ -17,7 +17,7 @@ const materials = {
   brick: new THREE.MeshPhongMaterial({ color: 0x9B4521, shininess: 10 })
 };
 
-export const Farmhouse = ({ scale = 1, isVisible = false }) => {
+export const Farmhouse = React.memo(({ scale = 1, isVisible = false }) => {
   const groupRef = useRef();
 
   useFrame((state, delta) => {
@@ -130,4 +130,4 @@ export const Farmhouse = ({ scale = 1, isVisible = false }) => {
       
     </group>
   );
-};
+});

@@ -1,8 +1,8 @@
-import React, { useRef, useMemo } from 'react';
+import React, { useRef } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
 
-export const Gazebo = ({ 
+export const Gazebo = React.memo(({ 
   scale = 1, 
   isVisible = false, 
   config 
@@ -137,4 +137,4 @@ export const Gazebo = ({
       </group>
     </group>
   );
-};
+});

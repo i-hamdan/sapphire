@@ -187,7 +187,7 @@ const CameraController = ({
 // ─────────────────────────────────────────────
 // PLOT BOUNDARY WALL — grey concrete + metal slat plates
 // ─────────────────────────────────────────────
-const PlotWallSegment = ({ x1, y1, x2, y2, config }) => {
+const PlotWallSegment = React.memo(({ x1, y1, x2, y2, config }) => {
   const pb = config.plotBoundary;
   const colors = config.colors;
   const dx = x2 - x1, dy = y2 - y1;
@@ -241,9 +241,9 @@ const PlotWallSegment = ({ x1, y1, x2, y2, config }) => {
   }
 
   return <>{elements}</>;
-};
+});
 
-const PlotBoundaryWall = ({ polygon, gateEdgeIdx, secondGateEdgeIdx = -1, config }) => {
+const PlotBoundaryWall = React.memo(({ polygon, gateEdgeIdx, secondGateEdgeIdx = -1, config }) => {
   const pb = config.plotBoundary;
   const pts = polygon.points.map(p => ({
     x: (p[0] - viewWidth / 2) * SCALE,
@@ -279,7 +279,7 @@ const PlotBoundaryWall = ({ polygon, gateEdgeIdx, secondGateEdgeIdx = -1, config
     }
   }
   return <>{segments}</>;
-};
+});
 
 // ─────────────────────────────────────────────
 // CAMPUS BOUNDARY — convex hull + cream wall + mesh fence
@@ -414,7 +414,7 @@ const CampusBoundarySegment = ({ x1, y1, x2, y2, config }) => {
   return <>{elements}</>;
 };
 
-const CampusBoundary = ({ config }) => {
+const CampusBoundary = React.memo(({ config }) => {
   const entranceMarkers = useMemo(() => {
     // Gap coordinates from campus_perimeter.json Points 2 and 3
     const p1 = { x: (1097 - viewWidth / 2) * SCALE, y: -(298 - viewHeight / 2) * SCALE };
@@ -459,7 +459,7 @@ const CampusBoundary = ({ config }) => {
       />
     </group>
   );
-};
+});
 
 
 
@@ -574,7 +574,7 @@ const GateLamps = ({ gateCx, gateCy, perpX, perpY, pathAngle, lampOff = 0.8 }) =
 // ─────────────────────────────────────────────
 // TREE
 // ─────────────────────────────────────────────
-const PlotTree = ({ x, y, size = 1.0, variant = 0 }) => {
+const PlotTree = React.memo(({ x, y, size = 1.0, variant = 0 }) => {
   const TRUNK_H = 1.1 * size;
   const FOLI_R = 0.7 * size;
   const BASE_Z = 0.32;
@@ -602,7 +602,7 @@ const PlotTree = ({ x, y, size = 1.0, variant = 0 }) => {
       </mesh>
     </group>
   );
-};
+});
 
 // ─────────────────────────────────────────────
 // GREEN AREA FOREST
@@ -1332,7 +1332,7 @@ const PlotDetails = ({ polygon, gateEdgeIdx, secondGateEdgeIdx = -1, cx, cy, con
 // ─────────────────────────────────────────────
 // MAP MESH
 // ─────────────────────────────────────────────
-const MapMesh = ({ polygon, isSelected, onClick, config }) => {
+const MapMesh = React.memo(({ polygon, isSelected, onClick, config }) => {
   // FIX: Some background areas are labeled "Plot ???" but should be treated as mountains
   const polyType = (polygon.label === 'Plot ???') ? 'mountain' : polygon.type;
 
@@ -1537,7 +1537,7 @@ const MapMesh = ({ polygon, isSelected, onClick, config }) => {
       )}
     </group>
   );
-};
+});
 
 // ─────────────────────────────────────────────
 // TRAFFIC
@@ -1669,24 +1669,14 @@ const InteractiveMap3D = () => {
 
   const canvasContainerRef = useRef(null);
 
-  const handleColorChange = (key, value) =>
-    setMapConfig(prev => ({ ...prev, colors: { ...prev.colors, [key]: value } }));
+  const selectedPlotRef = useRef(null);
+  useEffect(() => { selectedPlotRef.current = selectedPlot; }, [selectedPlot]);
 
-  const handleToggleChange = (category, key, value) =>
-    setMapConfig(prev => ({ ...prev, [category]: { ...prev[category], [key]: value } }));
+  const handleColorChange = useCallback((key, value) =>
+    setMapConfig(prev => ({ ...prev, colors: { ...prev.colors, [key]: value } })), []);
 
-  const handlePlotClick = (plot) => {
-    if (plot.photoPin) {
-      setActivePanorama(plot.photoPin);
-      return;
-    }
-    if (selectedPlot && selectedPlot.label === plot.label) {
-      resetCamera();
-    } else {
-      setSelectedPlot(plot);
-      setIsResetting(false);
-    }
-  };
+  const handleToggleChange = useCallback((category, key, value) =>
+    setMapConfig(prev => ({ ...prev, [category]: { ...prev[category], [key]: value } })), []);
 
   const resetCamera = useCallback(() => {
     setSelectedPlot(null);
@@ -1694,6 +1684,19 @@ const InteractiveMap3D = () => {
     // Restore default free-camera state
     camRef.current = { ...DEFAULT_CAM };
   }, []);
+
+  const handlePlotClick = useCallback((plot) => {
+    if (plot.photoPin) {
+      setActivePanorama(plot.photoPin);
+      return;
+    }
+    if (selectedPlotRef.current && selectedPlotRef.current.label === plot.label) {
+      resetCamera();
+    } else {
+      setSelectedPlot(plot);
+      setIsResetting(false);
+    }
+  }, [resetCamera]);
 
   // ── Touch event handling for the canvas ──
   useEffect(() => {
