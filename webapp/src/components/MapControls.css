@@ -1,0 +1,393 @@
+/* ═══════════════════════════════════════════════
+   MAP CONTROLS — Premium 3D Navigation UI
+   ═══════════════════════════════════════════════ */
+
+/* ── Wrapper ─────────────────────────────── */
+.mc-controls-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: 40;
+  font-family: 'DM Sans', sans-serif;
+}
+
+/* ── Toggle Button ─────────────────────────── */
+.mc-toggle-btn {
+  position: absolute;
+  top: 80px;
+  right: 24px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(13, 26, 14, 0.85);
+  border: 1px solid rgba(200, 217, 106, 0.22);
+  color: #f0ead6;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: all 0.3s ease;
+  pointer-events: auto;
+  z-index: 55;
+}
+.mc-toggle-btn:hover {
+  background: rgba(13, 26, 14, 0.95);
+  border-color: rgba(200, 217, 106, 0.5);
+}
+.mc-toggle-btn.active {
+  background: rgba(200, 217, 106, 0.15);
+  border-color: #c8d96a;
+  color: #c8d96a;
+}
+.mc-toggle-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+
+/* ══════════════════════════════════════════
+   ZOOM SLIDER — right edge vertical slider
+   ══════════════════════════════════════════ */
+.mc-zoom-slider {
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: auto;
+  z-index: 42;
+}
+
+.mc-zoom-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(13, 26, 14, 0.85);
+  border: 1px solid rgba(200, 217, 106, 0.22);
+  color: #c8d96a;
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  user-select: none;
+}
+
+.mc-zoom-track {
+  width: 6px;
+  height: 180px;
+  background: rgba(13, 26, 14, 0.85);
+  border: 1px solid rgba(200, 217, 106, 0.18);
+  border-radius: 3px;
+  position: relative;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  touch-action: none;
+}
+
+.mc-zoom-fill {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(200, 217, 106, 0.35), rgba(200, 217, 106, 0.15));
+  border-radius: 3px;
+  transition: height 0.05s linear;
+}
+
+.mc-zoom-thumb {
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, 50%);
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 40%, #e0e8a0, #c8d96a);
+  border: 2px solid rgba(13, 26, 14, 0.5);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4), 0 0 12px rgba(200, 217, 106, 0.25);
+  cursor: grab;
+  transition: bottom 0.05s linear;
+}
+.mc-zoom-thumb:active {
+  cursor: grabbing;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5), 0 0 18px rgba(200, 217, 106, 0.4);
+}
+
+
+/* ══════════════════════════════════════════
+   BOTTOM CONTROL GROUP  — pan pad + dials
+   ══════════════════════════════════════════ */
+.mc-bottom-group {
+  position: absolute;
+  bottom: 110px;
+  left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  pointer-events: auto;
+  z-index: 42;
+}
+
+.mc-dials-row {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+
+/* ══════════════════════════════════════════
+   PAN PAD — 2D trackpad
+   ══════════════════════════════════════════ */
+.mc-pan-pad {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.mc-pan-label,
+.mc-dial-label {
+  font-size: 0.55rem;
+  letter-spacing: 0.15em;
+  color: rgba(200, 217, 106, 0.6);
+  text-transform: uppercase;
+  font-weight: 600;
+  text-align: center;
+}
+
+.mc-pan-area {
+  width: 86px;
+  height: 86px;
+  border-radius: 50%;
+  background: rgba(13, 26, 14, 0.85);
+  border: 1.5px solid rgba(200, 217, 106, 0.22);
+  position: relative;
+  cursor: grab;
+  touch-action: none;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  overflow: hidden;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+.mc-pan-area:active {
+  cursor: grabbing;
+  border-color: rgba(200, 217, 106, 0.45);
+}
+
+/* Crosshair */
+.mc-pan-crosshair-h,
+.mc-pan-crosshair-v {
+  position: absolute;
+  background: rgba(200, 217, 106, 0.1);
+}
+.mc-pan-crosshair-h {
+  top: 50%;
+  left: 15%;
+  right: 15%;
+  height: 1px;
+  transform: translateY(-0.5px);
+}
+.mc-pan-crosshair-v {
+  left: 50%;
+  top: 15%;
+  bottom: 15%;
+  width: 1px;
+  transform: translateX(-0.5px);
+}
+
+/* Center knob */
+.mc-pan-knob {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 22px;
+  height: 22px;
+  margin: -11px 0 0 -11px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 40%, rgba(200, 217, 106, 0.45), rgba(200, 217, 106, 0.2));
+  border: 1.5px solid rgba(200, 217, 106, 0.5);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.4), 0 0 8px rgba(200, 217, 106, 0.15);
+  pointer-events: none;
+}
+
+/* Direction arrows */
+.mc-pan-arrow {
+  position: absolute;
+  font-size: 7px;
+  color: rgba(200, 217, 106, 0.3);
+  pointer-events: none;
+  line-height: 1;
+}
+.mc-pan-arrow-n { top: 6px; left: 50%; transform: translateX(-50%); }
+.mc-pan-arrow-s { bottom: 6px; left: 50%; transform: translateX(-50%); }
+.mc-pan-arrow-e { right: 6px; top: 50%; transform: translateY(-50%); }
+.mc-pan-arrow-w { left: 6px; top: 50%; transform: translateY(-50%); }
+
+
+/* ══════════════════════════════════════════
+   ROTATION DIAL — horizontal azimuth
+   ══════════════════════════════════════════ */
+.mc-dial-container,
+.mc-elev-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.mc-dial-ring {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(13, 26, 14, 0.85);
+  border: 1.5px solid rgba(200, 217, 106, 0.22);
+  position: relative;
+  cursor: grab;
+  touch-action: none;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+.mc-dial-ring:active {
+  cursor: grabbing;
+  border-color: rgba(200, 217, 106, 0.45);
+}
+
+/* Cardinal marks */
+.mc-dial-mark {
+  position: absolute;
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: rgba(200, 217, 106, 0.4);
+  pointer-events: none;
+}
+.mc-dial-mark-n { top: 3px; left: 50%; transform: translateX(-50%); }
+.mc-dial-mark-s { bottom: 3px; left: 50%; transform: translateX(-50%); }
+.mc-dial-mark-e { right: 4px; top: 50%; transform: translateY(-50%); }
+.mc-dial-mark-w { left: 4px; top: 50%; transform: translateY(-50%); }
+
+/* Rotating indicator */
+.mc-dial-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  transition: transform 0.08s linear;
+}
+.mc-dial-dot {
+  position: absolute;
+  top: 5px;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  margin-left: -3px;
+  border-radius: 50%;
+  background: #c8d96a;
+  box-shadow: 0 0 6px rgba(200, 217, 106, 0.6);
+}
+
+.mc-dial-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: rgba(200, 217, 106, 0.35);
+  pointer-events: none;
+}
+
+
+/* ══════════════════════════════════════════
+   ELEVATION DIAL — vertical tilt (arc)
+   ══════════════════════════════════════════ */
+.mc-elev-track {
+  width: 68px;
+  height: 50px;
+  position: relative;
+  cursor: grab;
+  touch-action: none;
+}
+.mc-elev-track:active {
+  cursor: grabbing;
+}
+
+.mc-elev-arc {
+  position: relative;
+  width: 64px;
+  height: 40px;
+  margin: 0 auto;
+}
+
+.mc-elev-thumb {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #c8d96a;
+  border: 1.5px solid rgba(13, 26, 14, 0.5);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4), 0 0 8px rgba(200, 217, 106, 0.3);
+  transform: translate(-50%, 50%);
+  pointer-events: none;
+  transition: left 0.08s linear, bottom 0.08s linear;
+}
+
+.mc-elev-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 2px;
+  padding: 0 2px;
+}
+.mc-elev-labels span {
+  font-size: 0.45rem;
+  color: rgba(200, 217, 106, 0.35);
+  letter-spacing: 0.05em;
+}
+
+
+/* ══════════════════════════════════════════
+   RESPONSIVE ADJUSTMENTS
+   ══════════════════════════════════════════ */
+@media (max-width: 480px) {
+  .mc-zoom-track {
+    height: 130px;
+  }
+  .mc-pan-area {
+    width: 72px;
+    height: 72px;
+  }
+  .mc-dial-ring {
+    width: 54px;
+    height: 54px;
+  }
+  .mc-bottom-group {
+    bottom: 95px;
+    left: 12px;
+    gap: 8px;
+  }
+  .mc-zoom-slider {
+    right: 12px;
+  }
+}
+
+/* ── Animation ────────────────────────────── */
+.mc-controls-wrapper {
+  animation: mc-fadeIn 0.4s ease-out;
+}
+
+@keyframes mc-fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

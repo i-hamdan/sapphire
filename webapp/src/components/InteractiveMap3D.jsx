@@ -1,7 +1,9 @@
-import React, { useMemo, useState, useRef } from 'react';
+import React, { useMemo, useState, useRef, useCallback, useEffect } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Text } from '@react-three/drei';
 import * as THREE from 'three';
+import MapControls from './MapControls';
+import './MapControls.css';
 import vectorsData from '../assets/full_map_vectors.json';
 import campusPerimeterData from '../assets/campus_perimeter.json';
 
@@ -81,39 +83,87 @@ const HOUSE_FRONT_OFFSET = -Math.PI / 2;
 
 // ─────────────────────────────────────────────
 // CAMERA CONTROLLER
+// Cinematic orbit when a plot is selected (UNCHANGED).
+// Free-camera mode uses external zoom/azimuth/elevation/pan state.
+// Reset is an instant snap — no lingering lock.
 // ─────────────────────────────────────────────
-const CameraController = ({ selectedPlot, isResetting, onResetComplete }) => {
+const CameraController = ({
+  selectedPlot,
+  isResetting,
+  onResetComplete,
+  // Free-camera parameters
+  camRef,
+}) => {
   const { camera } = useThree();
   const controlsRef = useRef();
+  const hasReset = useRef(false);
+
+  const vecPos = useMemo(() => new THREE.Vector3(), []);
+  const vecLook = useMemo(() => new THREE.Vector3(), []);
+
+  const plotCenter = useMemo(() => {
+    if (!selectedPlot) return null;
+    const tempGeom = createGeometry(selectedPlot.points, true, false);
+    return new THREE.Vector3(tempGeom.cx, 0, -tempGeom.cy);
+  }, [selectedPlot]);
 
   useFrame((state, delta) => {
     if (!controlsRef.current) return;
-    let targetPos = new THREE.Vector3();
-    let targetLook = new THREE.Vector3();
 
-    if (selectedPlot) {
-      const tempGeom = createGeometry(selectedPlot.points, true, false);
-      const plotCenter = new THREE.Vector3(tempGeom.cx, 0, -tempGeom.cy);
+    if (selectedPlot && plotCenter) {
+      // ── Cinematic orbit ──
       const rotationSpeed = 0.4;
       const radius = 50;
       const angle = state.clock.elapsedTime * rotationSpeed;
+      
       const offsetX = Math.sin(angle) * radius;
       const offsetZ = Math.cos(angle) * radius;
-      targetPos.copy(plotCenter).add(new THREE.Vector3(offsetX, 35, offsetZ));
-      const framingOffset = 18;
-      const lookOffset = new THREE.Vector3(Math.sin(angle) * framingOffset, 0, Math.cos(angle) * framingOffset);
-      targetLook.copy(plotCenter).add(lookOffset);
-      camera.position.lerp(targetPos, 3 * delta);
-      controlsRef.current.target.lerp(targetLook, 3 * delta);
-    } else if (isResetting) {
-      targetPos.set(0, 100, 50);
-      targetLook.set(0, 0, 0);
-      camera.position.lerp(targetPos, 2 * delta);
-      controlsRef.current.target.lerp(targetLook, 2 * delta);
-      if (camera.position.distanceTo(targetPos) < 1.0 && controlsRef.current.target.distanceTo(targetLook) < 1.0) {
-        onResetComplete();
-      }
+      
+      // Calculate precise position offline instead of new Vector3 allocations
+      vecPos.set(
+        plotCenter.x + offsetX,
+        35,
+        plotCenter.z + offsetZ
+      );
+      
+      const lookOffsetX = Math.sin(angle) * 18;
+      const lookOffsetZ = Math.cos(angle) * 18;
+      
+      vecLook.set(
+        plotCenter.x + lookOffsetX,
+        0,
+        plotCenter.z + lookOffsetZ
+      );
+      
+      camera.position.lerp(vecPos, 3 * delta);
+      controlsRef.current.target.lerp(vecLook, 3 * delta);
+      hasReset.current = false;
+
+    } else if (isResetting && !hasReset.current) {
+      // ── Instant snap back — no lingering lock ──
+      camera.position.set(0, 100, 50);
+      controlsRef.current.target.set(0, 0, 0);
+      hasReset.current = true;
+      onResetComplete();
+
+    } else if (!selectedPlot && !isResetting && camRef.current) {
+      // ── Free-camera: compute position from external state ──
+      const cur = camRef.current;
+      const sinEl = Math.sin(cur.elevation);
+      const cosEl = Math.cos(cur.elevation);
+      
+      vecPos.set(
+        cur.panX + cur.zoom * Math.sin(cur.azimuth) * sinEl,
+        cur.zoom * cosEl,
+        cur.panZ + cur.zoom * Math.cos(cur.azimuth) * sinEl
+      );
+      vecLook.set(cur.panX, 0, cur.panZ);
+
+      // Smooth lerp for fluid feel
+      camera.position.lerp(vecPos, 8 * delta);
+      controlsRef.current.target.lerp(vecLook, 8 * delta);
     }
+
     controlsRef.current.update();
   });
 
@@ -122,12 +172,15 @@ const CameraController = ({ selectedPlot, isResetting, onResetComplete }) => {
       ref={controlsRef}
       enableDamping
       dampingFactor={0.05}
+      // Disable all built-in interactions in free mode — we handle them
+      enableRotate={!!selectedPlot}
+      enableZoom={!!selectedPlot}
+      enablePan={!!selectedPlot}
       minDistance={selectedPlot ? 2 : 0.1}
       maxDistance={selectedPlot ? 800 : 10000}
       maxPolarAngle={selectedPlot ? Math.PI / 2.1 : Math.PI / 1.5}
       makeDefault
     />
-
   );
 };
 
@@ -1587,6 +1640,20 @@ const Traffic = ({ config }) => {
 };
 
 // ─────────────────────────────────────────────
+// DEFAULT CAMERA STATE
+// ─────────────────────────────────────────────
+const DEFAULT_CAM = {
+  zoom: 112,         // Distance from look-at target
+  azimuth: 0,        // Horizontal rotation (radians)
+  elevation: 0.46,   // Polar angle (radians, 0 = top-down, π/2 = flat)
+  panX: 0,           // Look-at target X
+  panZ: 0,           // Look-at target Z
+};
+
+const ZOOM_RANGE = [15, 250];
+const ELEVATION_RANGE = [0.15, Math.PI / 2.1];
+
+// ─────────────────────────────────────────────
 // MAIN COMPONENT
 // ─────────────────────────────────────────────
 const InteractiveMap3D = () => {
@@ -1594,7 +1661,13 @@ const InteractiveMap3D = () => {
   const [activePanorama, setActivePanorama] = useState(null);
   const [isResetting, setIsResetting] = useState(false);
   const [showConfig, setShowConfig] = useState(false);
+  const [showControls, setShowControls] = useState(true);
   const [mapConfig, setMapConfig] = useState(DEFAULT_MAP_CONFIG);
+
+  // ── Custom camera state ──
+  const camRef = useRef({ ...DEFAULT_CAM });
+
+  const canvasContainerRef = useRef(null);
 
   const handleColorChange = (key, value) =>
     setMapConfig(prev => ({ ...prev, colors: { ...prev.colors, [key]: value } }));
@@ -1614,7 +1687,193 @@ const InteractiveMap3D = () => {
       setIsResetting(false);
     }
   };
-  const resetCamera = () => { setSelectedPlot(null); setIsResetting(true); };
+
+  const resetCamera = useCallback(() => {
+    setSelectedPlot(null);
+    setIsResetting(true);
+    // Restore default free-camera state
+    camRef.current = { ...DEFAULT_CAM };
+  }, []);
+
+  // ── Touch event handling for the canvas ──
+  useEffect(() => {
+    const el = canvasContainerRef.current;
+    if (!el || selectedPlot) return;
+
+    let touchState = null;
+
+    const getTouchCenter = (touches) => {
+      let x = 0, y = 0;
+      for (let i = 0; i < touches.length; i++) {
+        x += touches[i].clientX;
+        y += touches[i].clientY;
+      }
+      return { x: x / touches.length, y: y / touches.length };
+    };
+
+    const getTouchSpread = (touches) => {
+      if (touches.length < 2) return 0;
+      const dx = touches[0].clientX - touches[1].clientX;
+      const dy = touches[0].clientY - touches[1].clientY;
+      return Math.sqrt(dx * dx + dy * dy);
+    };
+
+    const onTouchStart = (e) => {
+      if (e.touches.length === 1) {
+        touchState = {
+          type: 'pan',
+          startX: e.touches[0].clientX,
+          startY: e.touches[0].clientY,
+          lastX: e.touches[0].clientX,
+          lastY: e.touches[0].clientY,
+        };
+      } else if (e.touches.length === 2) {
+        const center = getTouchCenter(e.touches);
+        touchState = {
+          type: 'rotate',
+          lastX: center.x,
+          lastY: center.y,
+          lastSpread: getTouchSpread(e.touches),
+        };
+        e.preventDefault();
+      }
+    };
+
+    const onTouchMove = (e) => {
+      if (!touchState) return;
+
+      if (touchState.type === 'pan' && e.touches.length === 1) {
+        // ── 1-finger: Pan across ground plane ──
+        const dx = e.touches[0].clientX - touchState.lastX;
+        const dy = e.touches[0].clientY - touchState.lastY;
+        touchState.lastX = e.touches[0].clientX;
+        touchState.lastY = e.touches[0].clientY;
+
+        const cur = camRef.current;
+        const cosA = Math.cos(cur.azimuth);
+        const sinA = Math.sin(cur.azimuth);
+        const panSpeed = cur.zoom * 0.004;
+        cur.panX -= (dx * cosA + dy * sinA) * panSpeed;
+        cur.panZ -= (-dx * sinA + dy * cosA) * panSpeed;
+
+      } else if (touchState.type === 'rotate' && e.touches.length === 2) {
+        // ── 2-finger: Rotate + pinch zoom ──
+        e.preventDefault();
+        const center = getTouchCenter(e.touches);
+        const spread = getTouchSpread(e.touches);
+
+        const dx = center.x - touchState.lastX;
+        const dy = center.y - touchState.lastY;
+        touchState.lastX = center.x;
+        touchState.lastY = center.y;
+
+        const cur = camRef.current;
+        // Horizontal drag → azimuth rotation
+        cur.azimuth += dx * 0.006;
+        // Vertical drag → elevation tilt
+        cur.elevation = Math.max(ELEVATION_RANGE[0], Math.min(ELEVATION_RANGE[1], cur.elevation + dy * 0.004));
+
+        // Pinch → zoom
+        if (touchState.lastSpread > 0) {
+          const spreadDelta = spread - touchState.lastSpread;
+          cur.zoom = Math.max(ZOOM_RANGE[0], Math.min(ZOOM_RANGE[1], cur.zoom - spreadDelta * 0.3));
+        }
+        touchState.lastSpread = spread;
+
+      } else if (e.touches.length === 2 && touchState.type === 'pan') {
+        // Transitioned from 1-finger to 2-finger
+        const center = getTouchCenter(e.touches);
+        touchState = {
+          type: 'rotate',
+          lastX: center.x,
+          lastY: center.y,
+          lastSpread: getTouchSpread(e.touches),
+        };
+        e.preventDefault();
+      }
+    };
+
+    const onTouchEnd = (e) => {
+      if (e.touches.length === 0) {
+        touchState = null;
+      } else if (e.touches.length === 1) {
+        // Went from 2 fingers to 1 — switch to pan
+        touchState = {
+          type: 'pan',
+          startX: e.touches[0].clientX,
+          startY: e.touches[0].clientY,
+          lastX: e.touches[0].clientX,
+          lastY: e.touches[0].clientY,
+        };
+      }
+    };
+
+    // ── Mouse wheel zoom for desktop ──
+    const onWheel = (e) => {
+      e.preventDefault();
+      const cur = camRef.current;
+      cur.zoom = Math.max(ZOOM_RANGE[0], Math.min(ZOOM_RANGE[1], cur.zoom + e.deltaY * 0.08));
+    };
+
+    // ── Mouse drag for desktop ──
+    let mouseState = null;
+
+    const onMouseDown = (e) => {
+      if (e.button === 0) {
+        // Left click = pan
+        mouseState = { type: 'pan', lastX: e.clientX, lastY: e.clientY };
+      } else if (e.button === 2) {
+        // Right click = rotate
+        mouseState = { type: 'rotate', lastX: e.clientX, lastY: e.clientY };
+      }
+    };
+
+    const onMouseMove = (e) => {
+      if (!mouseState) return;
+      const dx = e.clientX - mouseState.lastX;
+      const dy = e.clientY - mouseState.lastY;
+      mouseState.lastX = e.clientX;
+      mouseState.lastY = e.clientY;
+
+      const cur = camRef.current;
+      if (mouseState.type === 'pan') {
+        const cosA = Math.cos(cur.azimuth);
+        const sinA = Math.sin(cur.azimuth);
+        const panSpeed = cur.zoom * 0.003;
+        cur.panX -= (dx * cosA + dy * sinA) * panSpeed;
+        cur.panZ -= (-dx * sinA + dy * cosA) * panSpeed;
+      } else if (mouseState.type === 'rotate') {
+        cur.azimuth += dx * 0.005;
+        cur.elevation = Math.max(ELEVATION_RANGE[0], Math.min(ELEVATION_RANGE[1], cur.elevation + dy * 0.004));
+      }
+    };
+
+    const onMouseUp = () => { mouseState = null; };
+
+    const onContextMenu = (e) => { e.preventDefault(); };
+
+    el.addEventListener('touchstart', onTouchStart, { passive: false });
+    el.addEventListener('touchmove', onTouchMove, { passive: false });
+    el.addEventListener('touchend', onTouchEnd, { passive: true });
+    el.addEventListener('wheel', onWheel, { passive: false });
+    el.addEventListener('mousedown', onMouseDown);
+    el.addEventListener('mousemove', onMouseMove);
+    el.addEventListener('mouseup', onMouseUp);
+    el.addEventListener('mouseleave', onMouseUp);
+    el.addEventListener('contextmenu', onContextMenu);
+
+    return () => {
+      el.removeEventListener('touchstart', onTouchStart);
+      el.removeEventListener('touchmove', onTouchMove);
+      el.removeEventListener('touchend', onTouchEnd);
+      el.removeEventListener('wheel', onWheel);
+      el.removeEventListener('mousedown', onMouseDown);
+      el.removeEventListener('mousemove', onMouseMove);
+      el.removeEventListener('mouseup', onMouseUp);
+      el.removeEventListener('mouseleave', onMouseUp);
+      el.removeEventListener('contextmenu', onContextMenu);
+    };
+  }, [selectedPlot]);
 
 
   return (
@@ -1636,57 +1895,79 @@ const InteractiveMap3D = () => {
         </div>
       </div>
 
-      <Canvas
-        shadows
-        camera={{ position: [0, 100, 50], fov: 50 }}
-        gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1 }}
-      >
-        <color attach="background" args={[mapConfig.colors.background]} />
-        <fog attach="fog" args={[mapConfig.colors.fog, 100, 800]} />
+      <div ref={canvasContainerRef} style={{ width: '100%', height: '100%', touchAction: 'none' }}>
+        <Canvas
+          shadows
+          camera={{ position: [0, 100, 50], fov: 50 }}
+          gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1 }}
+        >
+          <color attach="background" args={[mapConfig.colors.background]} />
+          <fog attach="fog" args={[mapConfig.colors.fog, 100, 800]} />
 
-        <ambientLight color={0x7aaa5a} intensity={1.5} />
-        <directionalLight castShadow color={0xfff3d0} intensity={2.5} position={[20, 80, 20]} shadow-mapSize={[2048, 2048]}>
-          <orthographicCamera attach="shadow-camera" args={[-200, 200, 200, -200, 0.5, 300]} />
-        </directionalLight>
-        <directionalLight color={0x3a6a8a} intensity={1.0} position={[-40, 40, -40]} />
-        <hemisphereLight args={[0x4a8a3a, 0x1a3010, 1.2]} />
+          <ambientLight color={0x7aaa5a} intensity={1.5} />
+          <directionalLight castShadow color={0xfff3d0} intensity={2.5} position={[20, 80, 20]} shadow-mapSize={[2048, 2048]}>
+            <orthographicCamera attach="shadow-camera" args={[-200, 200, 200, -200, 0.5, 300]} />
+          </directionalLight>
+          <directionalLight color={0x3a6a8a} intensity={1.0} position={[-40, 40, -40]} />
+          <hemisphereLight args={[0x4a8a3a, 0x1a3010, 1.2]} />
 
-        <CameraController
-          selectedPlot={selectedPlot}
-          isResetting={isResetting}
-          onResetComplete={() => setIsResetting(false)}
-        />
+          <CameraController
+            selectedPlot={selectedPlot}
+            isResetting={isResetting}
+            onResetComplete={() => setIsResetting(false)}
+            camRef={camRef}
+          />
 
-        <Traffic config={mapConfig} />
+          <Traffic config={mapConfig} />
 
-        <group>
-          {cleanMapData.map((polygon, index) => (
-            <MapMesh
-              key={`${polygon.label || 'poly'}-${index}`}
-              polygon={polygon}
-              isSelected={selectedPlot && selectedPlot.label === polygon.label}
-              onClick={handlePlotClick}
-              config={mapConfig}
-            />
-          ))}
-        </group>
+          <group>
+            {cleanMapData.map((polygon, index) => (
+              <MapMesh
+                key={`${polygon.label || 'poly'}-${index}`}
+                polygon={polygon}
+                isSelected={selectedPlot && selectedPlot.label === polygon.label}
+                onClick={handlePlotClick}
+                config={mapConfig}
+              />
+            ))}
+          </group>
 
-        <group rotation={[-Math.PI / 2, 0, 0]}>
-          {mapConfig.campusBoundary.isVisible && <CampusBoundary config={mapConfig} />}
-        </group>
+          <group rotation={[-Math.PI / 2, 0, 0]}>
+            {mapConfig.campusBoundary.isVisible && <CampusBoundary config={mapConfig} />}
+          </group>
 
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.05, 0]} receiveShadow>
-          <planeGeometry args={[mapConfig.geometry.groundSize, mapConfig.geometry.groundSize]} />
-          <meshLambertMaterial color={hexToThreeColor(mapConfig.colors.ground)} />
-        </mesh>
+          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.05, 0]} receiveShadow>
+            <planeGeometry args={[mapConfig.geometry.groundSize, mapConfig.geometry.groundSize]} />
+            <meshLambertMaterial color={hexToThreeColor(mapConfig.colors.ground)} />
+          </mesh>
 
-      </Canvas>
+        </Canvas>
+      </div>
+
+      {/* On-screen navigation controls (only in free-camera mode) */}
+      <MapControls
+        camRef={camRef}
+        isVisible={!selectedPlot && showControls}
+        zoomRange={ZOOM_RANGE}
+        elevationRange={ELEVATION_RANGE}
+      />
 
       <div className="view-controls">
         <button className={`view-btn icon-btn ${!selectedPlot ? 'active' : ''}`} onClick={resetCamera} title="Default View">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
             <polyline points="9 22 9 12 15 12 15 22" />
+          </svg>
+        </button>
+        {/* Controls toggle */}
+        <button
+          className={`view-btn icon-btn ${showControls ? 'active' : ''}`}
+          onClick={() => setShowControls(p => !p)}
+          title={showControls ? 'Hide Nav Controls' : 'Show Nav Controls'}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 8v8M8 12h8" />
           </svg>
         </button>
         <button className={`view-btn icon-btn ${showConfig ? 'active' : ''}`} onClick={() => setShowConfig(!showConfig)} title="Map Configuration">
