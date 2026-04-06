@@ -116,6 +116,18 @@ export const DEFAULT_MAP_CONFIG = {
     reverseRotation: false,    // Default N-E-S-W
     reverseTilt: true,        // Default up tilts up
     reversePan: true,         // Default drag right moves right
+  },
+  cameraControlUI: {
+    tiltWidth: 44,
+    tiltHeight: 50,
+    rotateWidth: 80,
+    rotateHeight: 44,
+  },
+  interaction: {
+    panSensitivity: 0.0012,
+    orbitSensitivity: 0.004,
+    zoomSensitivity: 0.001,
+    defaultTouchMode: 'pan',   // 'pan' or 'orbit'
   }
 };
 

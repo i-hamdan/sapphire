@@ -267,6 +267,13 @@
   height: 20px;
 }
 
+.view-btn.touch-toggle.orbit {
+  background: rgba(200, 217, 106, 0.25);
+  border-color: #c8d96a;
+  color: #c8d96a;
+  box-shadow: 0 0 15px rgba(200, 217, 106, 0.2);
+}
+
 /* Luxury Branding Overlay */
 .brand-overlay {
   position: absolute;

@@ -142,8 +142,25 @@
 
 .mc-dials-row {
   display: flex;
-  gap: 20px;
-  align-items: center; /* Center horizontally aligned items */
+  align-items: center;
+  justify-content: center;
+  min-width: 400px; /* Ensure space for lateral movement */
+}
+
+.mc-side-col {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.mc-side-left {
+  justify-content: flex-end;
+  padding-right: 16px;
+}
+
+.mc-side-right {
+  justify-content: flex-start;
+  padding-left: 16px;
 }
 
 

@@ -177,7 +177,7 @@ const PanPad = ({ onPan, reverse }) => {
 // ─────────────────────────────────────────────
 // ROTATION DIAL  — horizontal (azimuth) rotation
 // ─────────────────────────────────────────────
-const RotationBar = ({ value, onChange, reverse }) => {
+const RotationBar = ({ value, onChange, reverse, width, height }) => {
   const barRef = useRef(null);
   const dragging = useRef(false);
   const lastX = useRef(0);
@@ -231,6 +231,7 @@ const RotationBar = ({ value, onChange, reverse }) => {
       <div
         ref={barRef}
         className="mc-rotation-bar"
+        style={{ width: `${width}px`, height: `${height}px` }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
@@ -258,7 +259,7 @@ const RotationBar = ({ value, onChange, reverse }) => {
 // ─────────────────────────────────────────────
 // ELEVATION DIAL  — vertical (polar) angle
 // ─────────────────────────────────────────────
-const ElevationBar = ({ value, min, max, onChange, reverse }) => {
+const ElevationBar = ({ value, min, max, onChange, reverse, width, height }) => {
   const barRef = useRef(null);
   const dragging = useRef(false);
   const lastY = useRef(0);
@@ -310,6 +311,7 @@ const ElevationBar = ({ value, min, max, onChange, reverse }) => {
       <div
         ref={barRef}
         className="mc-elevation-bar"
+        style={{ width: `${width}px`, height: `${height}px` }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
@@ -445,7 +447,7 @@ const MapControls = ({
     camRef.current.panZ -= (-dx * sinA + dy * cosA) * panSpeed;
   };
 
-  const { cameraControl } = DEFAULT_MAP_CONFIG;
+  const { cameraControl, cameraControlUI } = DEFAULT_MAP_CONFIG;
 
   return (
     <div className="mc-controls-wrapper">
@@ -462,19 +464,29 @@ const MapControls = ({
       {/* Bottom control group repositioned to right side in CSS */}
       <div className="mc-bottom-group">
         <div className="mc-dials-row">
-          <ElevationBar
-            value={localCam.elevation}
-            min={elevationRange[0]}
-            max={elevationRange[1]}
-            onChange={handleElevationChange}
-            reverse={cameraControl.reverseTilt}
-          />
+          <div className="mc-side-col mc-side-left">
+            <ElevationBar
+              value={localCam.elevation}
+              min={elevationRange[0]}
+              max={elevationRange[1]}
+              onChange={handleElevationChange}
+              reverse={cameraControl.reverseTilt}
+              width={cameraControlUI.tiltWidth}
+              height={cameraControlUI.tiltHeight}
+            />
+          </div>
+          
           <PanPad onPan={handlePan} reverse={cameraControl.reversePan} />
-          <RotationBar
-            value={localCam.azimuth}
-            onChange={handleAzimuthChange}
-            reverse={cameraControl.reverseRotation}
-          />
+
+          <div className="mc-side-col mc-side-right">
+            <RotationBar
+              value={localCam.azimuth}
+              onChange={handleAzimuthChange}
+              reverse={cameraControl.reverseRotation}
+              width={cameraControlUI.rotateWidth}
+              height={cameraControlUI.rotateHeight}
+            />
+          </div>
         </div>
       </div>
     </div>

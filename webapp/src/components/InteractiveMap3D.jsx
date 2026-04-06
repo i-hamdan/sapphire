@@ -1670,6 +1670,7 @@ const InteractiveMap3D = () => {
   const [mapConfig] = useState(DEFAULT_MAP_CONFIG);
   const [isLocked, setIsLocked] = useState(true);
   const [controlResetTrigger, setControlResetTrigger] = useState(0);
+  const [touchMode, setTouchMode] = useState(DEFAULT_MAP_CONFIG.interaction.defaultTouchMode || 'pan');
 
   // ── Custom camera state ──
   const camRef = useRef({ ...DEFAULT_CAM });
@@ -1731,7 +1732,8 @@ const InteractiveMap3D = () => {
       if (isLocked) return;
       e.preventDefault();
       if (!camRef.current) return;
-      const zoomSpeed = camRef.current.zoom * 0.0012;
+      const zoomSensitivity = DEFAULT_MAP_CONFIG.interaction.zoomSensitivity || 0.001;
+      const zoomSpeed = camRef.current.zoom * zoomSensitivity;
       const newVal = camRef.current.zoom + e.deltaY * zoomSpeed;
       camRef.current.zoom = Math.max(ZOOM_RANGE[0], Math.min(ZOOM_RANGE[1], newVal));
     };
@@ -1743,12 +1745,16 @@ const InteractiveMap3D = () => {
         const dy = e.touches[0].clientY - e.touches[1].clientY;
         mouseState = { type: 'pinch', dist: Math.hypot(dx, dy), startZoom: camRef.current.zoom };
       } else if (e.touches.length === 1) {
-        mouseState = { type: 'pan', x: e.touches[0].clientX, y: e.touches[0].clientY };
+        // Use the current touchMode ('pan' or 'orbit') for 1-finger interaction
+        mouseState = { type: touchMode, x: e.touches[0].clientX, y: e.touches[0].clientY };
       }
     };
 
     const onTouchMove = (e) => {
       if (isLocked || !mouseState || !camRef.current) return;
+      
+      const interaction = DEFAULT_MAP_CONFIG.interaction;
+
       if (mouseState.type === 'pinch' && e.touches.length === 2) {
         e.preventDefault();
         const dx = e.touches[0].clientX - e.touches[1].clientX;
@@ -1756,17 +1762,28 @@ const InteractiveMap3D = () => {
         const newDist = Math.hypot(dx, dy);
         const factor = mouseState.dist / newDist;
         camRef.current.zoom = Math.max(ZOOM_RANGE[0], Math.min(ZOOM_RANGE[1], mouseState.startZoom * factor));
-      } else if (mouseState.type === 'pan' && e.touches.length === 1) {
+      } else if (e.touches.length === 1) {
         e.preventDefault();
         const dx = e.touches[0].clientX - mouseState.x;
         const dy = e.touches[0].clientY - mouseState.y;
         mouseState.x = e.touches[0].clientX;
         mouseState.y = e.touches[0].clientY;
-        const panSpeed = camRef.current.zoom * 0.003 * (window.devicePixelRatio || 1);
-        const cosA = Math.cos(camRef.current.azimuth);
-        const sinA = Math.sin(camRef.current.azimuth);
-        camRef.current.panX -= (dx * cosA + dy * sinA) * panSpeed;
-        camRef.current.panZ -= (-dx * sinA + dy * cosA) * panSpeed;
+
+        if (mouseState.type === 'pan') {
+          // Normalize sensitivity: remove devicePixelRatio to prevent mobile "jumps"
+          const panSpeed = camRef.current.zoom * (interaction.panSensitivity || 0.0012);
+          const cosA = Math.cos(camRef.current.azimuth);
+          const sinA = Math.sin(camRef.current.azimuth);
+          camRef.current.panX -= (dx * cosA + dy * sinA) * panSpeed;
+          camRef.current.panZ -= (-dx * sinA + dy * cosA) * panSpeed;
+        } else if (mouseState.type === 'orbit') {
+          const orbitSens = interaction.orbitSensitivity || 0.004;
+          camRef.current.azimuth += dx * orbitSens;
+          camRef.current.elevation = Math.max(
+            ELEVATION_RANGE[0], 
+            Math.min(ELEVATION_RANGE[1], camRef.current.elevation + dy * orbitSens)
+          );
+        }
       }
     };
 
@@ -1784,15 +1801,21 @@ const InteractiveMap3D = () => {
       mouseState.x = e.clientX;
       mouseState.y = e.clientY;
 
+      const interaction = DEFAULT_MAP_CONFIG.interaction;
+
       if (mouseState.type === 'pan') {
-        const panSpeed = camRef.current.zoom * 0.002;
+        const panSpeed = camRef.current.zoom * (interaction.panSensitivity || 0.0012);
         const cosA = Math.cos(camRef.current.azimuth);
         const sinA = Math.sin(camRef.current.azimuth);
         camRef.current.panX -= (dx * cosA + dy * sinA) * panSpeed;
         camRef.current.panZ -= (-dx * sinA + dy * cosA) * panSpeed;
       } else if (mouseState.type === 'orbit') {
-        camRef.current.azimuth += dx * 0.005;
-        camRef.current.elevation = Math.max(ELEVATION_RANGE[0], Math.min(ELEVATION_RANGE[1], camRef.current.elevation + dy * 0.004));
+        const orbitSens = interaction.orbitSensitivity || 0.004;
+        camRef.current.azimuth += dx * orbitSens;
+        camRef.current.elevation = Math.max(
+          ELEVATION_RANGE[0], 
+          Math.min(ELEVATION_RANGE[1], camRef.current.elevation + dy * orbitSens)
+        );
       }
     };
 
@@ -1820,7 +1843,7 @@ const InteractiveMap3D = () => {
       el.removeEventListener('mouseleave', onMouseUp);
       el.removeEventListener('contextmenu', onContextMenu);
     };
-  }, [isLocked, selectedPlot]);
+  }, [isLocked, selectedPlot, touchMode]);
 
   return (
     <div className="map-3d-container">
@@ -1933,6 +1956,27 @@ const InteractiveMap3D = () => {
             <circle cx="12" cy="12" r="10" />
             <path d="M12 8v8M8 12h8" />
           </svg>
+        </button>
+
+        {/* Interaction Type Toggle (Pan vs Orbit) */}
+        <button
+          className={`view-btn icon-btn touch-toggle ${touchMode}`}
+          onClick={() => setTouchMode(prev => prev === 'pan' ? 'orbit' : 'pan')}
+          title={touchMode === 'pan' ? 'Switch to Orbit Mode' : 'Switch to Pan Mode'}
+        >
+          {touchMode === 'pan' ? (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20" />
+            </svg>
+          ) : (
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 2a10 10 0 0 1 10 10" />
+              <path d="M22 12a10 10 0 0 1-10 10" />
+              <path d="M2 12A10 10 0 0 1 12 2" />
+              <path d="M12 22A10 10 0 0 1 2 12" />
+            </svg>
+          )}
         </button>
       </div>
       <div className={`panel ${selectedPlot ? 'open' : ''}`}>
