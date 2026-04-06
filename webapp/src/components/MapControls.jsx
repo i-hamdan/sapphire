@@ -9,19 +9,24 @@ const ZoomSlider = ({ value, min, max, onChange, reverse }) => {
   const dragging = useRef(false);
   const [localValue, setLocalValue] = useState(null);
 
+  // UI always shows natural position (+ top, - bottom)
   const displayValue = localValue !== null ? localValue : value;
-  const ratioRaw = (displayValue - min) / (max - min);
-  // Default: + top (100%), - bottom (0%)
-  const pct = reverse ? (100 - ratioRaw * 100) : (ratioRaw * 100);
+  const pct = ((displayValue - min) / (max - min)) * 100;
 
   const updateFromY = useCallback((clientY) => {
     const rect = trackRef.current.getBoundingClientRect();
-    let ratio = 1 - Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
-    if (reverse) ratio = 1 - ratio; 
-    
+    // Raw ratio (Top = 1, Bottom = 0)
+    const ratio = 1 - Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
     const newVal = min + ratio * (max - min);
+    
     setLocalValue(newVal);
-    onChange(newVal);
+
+    // Map Action: if reverse, moving handle towards + (top) results in zoom out
+    if (reverse) {
+      onChange(max - (newVal - min));
+    } else {
+      onChange(newVal);
+    }
   }, [min, max, onChange, reverse]);
 
   const onPointerDown = useCallback((e) => {
@@ -84,24 +89,20 @@ const PanPad = ({ onPan, reverse }) => {
   const onPointerMove = useCallback((e) => {
     if (!dragging.current) return;
     e.preventDefault();
-    let dx = e.clientX - lastPos.current.x;
-    let dy = e.clientY - lastPos.current.y;
+    const dx = e.clientX - lastPos.current.x;
+    const dy = e.clientY - lastPos.current.y;
     lastPos.current = { x: e.clientX, y: e.clientY };
 
-    if (reverse) {
-      dx = -dx;
-      dy = -dy;
-    }
-
-    // Clamp visual offset for the knob indicator
+    // Clamp visual offset for the knob indicator (UI is always natural)
     setOffset(prev => ({
       x: Math.max(-28, Math.min(28, prev.x + dx)),
       y: Math.max(-28, Math.min(28, prev.y + dy)),
     }));
 
-    // Emit pan delta (normalized -1 to 1 sensitivity)
-    onPan(dx * 0.5, dy * 0.5);
-  }, [onPan]);
+    // Action: Invert the emitted delta if reverse is active
+    const multiplier = reverse ? -0.5 : 0.5;
+    onPan(dx * multiplier, dy * multiplier);
+  }, [onPan, reverse]);
 
   const onPointerUp = useCallback((e) => {
     dragging.current = false;
@@ -155,8 +156,8 @@ const RotationBar = ({ value, onChange, reverse }) => {
   const displayValue = localValue !== null ? localValue : value;
   const angle = ((displayValue % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
   const TAPE_WIDTH = 320;
-  // If reverse, horizontal movement slides tape differently
-  const offset = (reverse ? 1 : -1) * (angle / (Math.PI * 2)) * TAPE_WIDTH;
+  // Visual Tape position is always natural
+  const offset = -(angle / (Math.PI * 2)) * TAPE_WIDTH;
 
   const onPointerDown = useCallback((e) => {
     e.preventDefault();
@@ -172,11 +173,11 @@ const RotationBar = ({ value, onChange, reverse }) => {
     e.preventDefault();
     const dx = e.clientX - lastX.current;
     lastX.current = e.clientX;
-    const deltaRaw = dx * (Math.PI * 2 / TAPE_WIDTH);
-    const delta = reverse ? -deltaRaw : deltaRaw;
+    const delta = dx * (Math.PI * 2 / TAPE_WIDTH);
     
     setLocalValue(prev => (prev !== null ? prev + delta : value + delta));
-    onChange(displayValue + delta);
+    // Action: Map inverted delta if needed
+    onChange(displayValue + (reverse ? -delta : delta));
   }, [displayValue, onChange, value, reverse]);
 
   const onPointerUp = useCallback((e) => {
@@ -225,8 +226,7 @@ const ElevationBar = ({ value, min, max, onChange, reverse }) => {
   const [localValue, setLocalValue] = useState(null);
 
   const displayValue = localValue !== null ? localValue : value;
-  const ratioRaw = (displayValue - min) / (max - min);
-  const pct = reverse ? (100 - ratioRaw * 100) : (ratioRaw * 100);
+  const pct = ((displayValue - min) / (max - min)) * 100;
 
   const onPointerDown = useCallback((e) => {
     e.preventDefault();
@@ -242,13 +242,12 @@ const ElevationBar = ({ value, min, max, onChange, reverse }) => {
     e.preventDefault();
     const dy = e.clientY - lastY.current;
     lastY.current = e.clientY;
-    const deltaRaw = dy * 0.005;
-    const delta = reverse ? -deltaRaw : deltaRaw;
+    const delta = dy * 0.005;
     
-    const newVal = Math.max(min, Math.min(max, (localValue !== null ? localValue : value) + delta));
-    setLocalValue(newVal);
-    onChange(newVal);
-  }, [localValue, value, min, max, onChange, reverse]);
+    setLocalValue(prev => Math.max(min, Math.min(max, (prev !== null ? prev : value) + delta)));
+    // Action: Map inverted delta if needed
+    onChange(displayValue + (reverse ? -delta : delta));
+  }, [displayValue, value, min, max, onChange, reverse]);
 
   const onPointerUp = useCallback((e) => {
     dragging.current = false;
