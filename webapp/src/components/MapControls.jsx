@@ -335,9 +335,22 @@ const MapControls = ({
   isVisible,
   zoomRange = [15, 250],
   elevationRange = [0.15, Math.PI / 2.1],
+  triggerReset = 0,
 }) => {
   const [localCam, setLocalCam] = useState({ zoom: 112, azimuth: 0, elevation: 0.46 });
   const targetCam = useRef({ ...DEFAULTS, active: { zoom: false, azimuth: false, elevation: false, pan: false } });
+
+  // Handle global reset trigger from parent
+  useEffect(() => {
+    if (triggerReset > 0) {
+      targetCam.current.zoom = DEFAULTS.zoom;
+      targetCam.current.azimuth = DEFAULTS.azimuth;
+      targetCam.current.elevation = DEFAULTS.elevation;
+      targetCam.current.panX = DEFAULTS.panX;
+      targetCam.current.panZ = DEFAULTS.panZ;
+      targetCam.current.active = { zoom: true, azimuth: true, elevation: true, pan: true };
+    }
+  }, [triggerReset]);
 
   // Sync visual UI with the shared ref without lagging the 3D map
   useEffect(() => {

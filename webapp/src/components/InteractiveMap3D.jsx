@@ -1669,6 +1669,7 @@ const InteractiveMap3D = () => {
   const [showControls, setShowControls] = useState(true);
   const [mapConfig] = useState(DEFAULT_MAP_CONFIG);
   const [isLocked, setIsLocked] = useState(true);
+  const [controlResetTrigger, setControlResetTrigger] = useState(0);
 
   // ── Custom camera state ──
   const camRef = useRef({ ...DEFAULT_CAM });
@@ -1679,7 +1680,7 @@ const InteractiveMap3D = () => {
   const resetCamera = useCallback(() => {
     setSelectedPlot(null);
     setIsResetting(true);
-    camRef.current = { ...DEFAULT_CAM };
+    setControlResetTrigger(prev => prev + 1);
   }, []);
 
   useEffect(() => {
@@ -1913,6 +1914,7 @@ const InteractiveMap3D = () => {
         isVisible={!selectedPlot && showControls}
         zoomRange={ZOOM_RANGE}
         elevationRange={ELEVATION_RANGE}
+        triggerReset={controlResetTrigger}
       />
 
       <div className="view-controls">
