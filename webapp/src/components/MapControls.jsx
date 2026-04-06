@@ -1,27 +1,28 @@
 import React, { useRef, useCallback, useEffect, useState } from 'react';
+import { DEFAULT_MAP_CONFIG } from '../config/mapConfig';
 
 // ─────────────────────────────────────────────
 // ZOOM SLIDER  — vertical slider on right edge
 // ─────────────────────────────────────────────
-const ZoomSlider = ({ value, min, max, onChange }) => {
+const ZoomSlider = ({ value, min, max, onChange, reverse }) => {
   const trackRef = useRef(null);
   const dragging = useRef(false);
   const [localValue, setLocalValue] = useState(null);
 
-  // Use localValue during drag, otherwise prop value
   const displayValue = localValue !== null ? localValue : value;
-  // Visual Alignment: - (Zoom Out/Min) is at the top (bottom: 100%), + (Zoom In/Max) is at the bottom (bottom: 0%)
-  const pct = 100 - ((displayValue - min) / (max - min)) * 100;
+  const ratioRaw = (displayValue - min) / (max - min);
+  // Default: + top (100%), - bottom (0%)
+  const pct = reverse ? (100 - ratioRaw * 100) : (ratioRaw * 100);
 
   const updateFromY = useCallback((clientY) => {
     const rect = trackRef.current.getBoundingClientRect();
-    // Top of track (clientY = rect.top) -> ratio = 0 -> newVal = min (Zoom Out)
-    // Bottom of track (clientY = rect.bottom) -> ratio = 1 -> newVal = max (Zoom In)
-    const ratio = Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
+    let ratio = 1 - Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
+    if (reverse) ratio = 1 - ratio; 
+    
     const newVal = min + ratio * (max - min);
     setLocalValue(newVal);
     onChange(newVal);
-  }, [min, max, onChange]);
+  }, [min, max, onChange, reverse]);
 
   const onPointerDown = useCallback((e) => {
     e.preventDefault();
@@ -45,7 +46,7 @@ const ZoomSlider = ({ value, min, max, onChange }) => {
 
   return (
     <div className="mc-zoom-slider" title="Zoom">
-      <div className="mc-zoom-icon mc-zoom-icon-minus">−</div>
+      <div className="mc-zoom-icon mc-zoom-icon-plus">+</div>
       <div
         ref={trackRef}
         className="mc-zoom-track"
@@ -57,7 +58,7 @@ const ZoomSlider = ({ value, min, max, onChange }) => {
         <div className="mc-zoom-fill" style={{ height: `${pct}%` }} />
         <div className="mc-zoom-thumb" style={{ bottom: `${pct}%` }} />
       </div>
-      <div className="mc-zoom-icon mc-zoom-icon-plus">+</div>
+      <div className="mc-zoom-icon mc-zoom-icon-minus">−</div>
     </div>
   );
 };
@@ -66,7 +67,7 @@ const ZoomSlider = ({ value, min, max, onChange }) => {
 // ─────────────────────────────────────────────
 // PAN PAD  — 2D draggable area, moves XZ camera target
 // ─────────────────────────────────────────────
-const PanPad = ({ onPan }) => {
+const PanPad = ({ onPan, reverse }) => {
   const padRef = useRef(null);
   const dragging = useRef(false);
   const lastPos = useRef({ x: 0, y: 0 });
@@ -83,9 +84,14 @@ const PanPad = ({ onPan }) => {
   const onPointerMove = useCallback((e) => {
     if (!dragging.current) return;
     e.preventDefault();
-    const dx = e.clientX - lastPos.current.x;
-    const dy = e.clientY - lastPos.current.y;
+    let dx = e.clientX - lastPos.current.x;
+    let dy = e.clientY - lastPos.current.y;
     lastPos.current = { x: e.clientX, y: e.clientY };
+
+    if (reverse) {
+      dx = -dx;
+      dy = -dy;
+    }
 
     // Clamp visual offset for the knob indicator
     setOffset(prev => ({
@@ -140,7 +146,7 @@ const PanPad = ({ onPan }) => {
 // ─────────────────────────────────────────────
 // ROTATION DIAL  — horizontal (azimuth) rotation
 // ─────────────────────────────────────────────
-const RotationBar = ({ value, onChange }) => {
+const RotationBar = ({ value, onChange, reverse }) => {
   const barRef = useRef(null);
   const dragging = useRef(false);
   const lastX = useRef(0);
@@ -149,7 +155,8 @@ const RotationBar = ({ value, onChange }) => {
   const displayValue = localValue !== null ? localValue : value;
   const angle = ((displayValue % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
   const TAPE_WIDTH = 320;
-  const offset = -(angle / (Math.PI * 2)) * TAPE_WIDTH;
+  // If reverse, horizontal movement slides tape differently
+  const offset = (reverse ? 1 : -1) * (angle / (Math.PI * 2)) * TAPE_WIDTH;
 
   const onPointerDown = useCallback((e) => {
     e.preventDefault();
@@ -165,10 +172,12 @@ const RotationBar = ({ value, onChange }) => {
     e.preventDefault();
     const dx = e.clientX - lastX.current;
     lastX.current = e.clientX;
-    const delta = dx * (Math.PI * 2 / TAPE_WIDTH);
+    const deltaRaw = dx * (Math.PI * 2 / TAPE_WIDTH);
+    const delta = reverse ? -deltaRaw : deltaRaw;
+    
     setLocalValue(prev => (prev !== null ? prev + delta : value + delta));
     onChange(displayValue + delta);
-  }, [displayValue, onChange, value]);
+  }, [displayValue, onChange, value, reverse]);
 
   const onPointerUp = useCallback((e) => {
     dragging.current = false;
@@ -209,14 +218,15 @@ const RotationBar = ({ value, onChange }) => {
 // ─────────────────────────────────────────────
 // ELEVATION DIAL  — vertical (polar) angle
 // ─────────────────────────────────────────────
-const ElevationBar = ({ value, min, max, onChange }) => {
+const ElevationBar = ({ value, min, max, onChange, reverse }) => {
   const barRef = useRef(null);
   const dragging = useRef(false);
   const lastY = useRef(0);
   const [localValue, setLocalValue] = useState(null);
 
   const displayValue = localValue !== null ? localValue : value;
-  const pct = ((displayValue - min) / (max - min)) * 100;
+  const ratioRaw = (displayValue - min) / (max - min);
+  const pct = reverse ? (100 - ratioRaw * 100) : (ratioRaw * 100);
 
   const onPointerDown = useCallback((e) => {
     e.preventDefault();
@@ -232,11 +242,13 @@ const ElevationBar = ({ value, min, max, onChange }) => {
     e.preventDefault();
     const dy = e.clientY - lastY.current;
     lastY.current = e.clientY;
-    const delta = dy * 0.005;
+    const deltaRaw = dy * 0.005;
+    const delta = reverse ? -deltaRaw : deltaRaw;
+    
     const newVal = Math.max(min, Math.min(max, (localValue !== null ? localValue : value) + delta));
     setLocalValue(newVal);
     onChange(newVal);
-  }, [localValue, value, min, max, onChange]);
+  }, [localValue, value, min, max, onChange, reverse]);
 
   const onPointerUp = useCallback((e) => {
     dragging.current = false;
@@ -308,6 +320,8 @@ const MapControls = ({
     camRef.current.panZ -= (-dx * sinA + dy * cosA) * panSpeed;
   };
 
+  const { cameraControl } = DEFAULT_MAP_CONFIG;
+
   return (
     <div className="mc-controls-wrapper">
       {/* Right edge — Zoom */}
@@ -316,6 +330,7 @@ const MapControls = ({
         min={zoomRange[0]}
         max={zoomRange[1]}
         onChange={handleZoomChange}
+        reverse={cameraControl.reverseZoom}
       />
 
       {/* Bottom control group repositioned to right side in CSS */}
@@ -326,12 +341,14 @@ const MapControls = ({
             min={elevationRange[0]}
             max={elevationRange[1]}
             onChange={handleElevationChange}
+            reverse={cameraControl.reverseTilt}
           />
           <RotationBar
             value={localCam.azimuth}
             onChange={handleAzimuthChange}
+            reverse={cameraControl.reverseRotation}
           />
-          <PanPad onPan={handlePan} />
+          <PanPad onPan={handlePan} reverse={cameraControl.reversePan} />
         </div>
       </div>
     </div>

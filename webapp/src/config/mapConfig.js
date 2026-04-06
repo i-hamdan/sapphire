@@ -109,6 +109,12 @@ export const DEFAULT_MAP_CONFIG = {
   brandOverlay: {
     isVisible: false,          // Toggle brand logo visibility
     logoWidth: "200px",       // Width of the logo in the overlay
+  },
+  cameraControl: {
+    reverseZoom: false,        // Default + top, - bottom
+    reverseRotation: false,    // Default N-E-S-W
+    reverseTilt: false,        // Default up tilts up
+    reversePan: false,         // Default drag right moves right
   }
 };
 
