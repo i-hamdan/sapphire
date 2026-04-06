@@ -203,12 +203,12 @@ const RotationBar = ({ value, onChange }) => {
 // ─────────────────────────────────────────────
 // ELEVATION DIAL  — vertical (polar) angle
 // ─────────────────────────────────────────────
-const ElevationDial = ({ value, min, max, onChange }) => {
-  const dialRef = useRef(null);
+const ElevationBar = ({ value, min, max, onChange }) => {
+  const barRef = useRef(null);
   const dragging = useRef(false);
   const lastY = useRef(0);
 
-  // Map elevation to a visual percentage (0=flat, 100=top-down)
+  // Map elevation to a visual percentage (0 = top-down, 100 = flat)
   const pct = ((value - min) / (max - min)) * 100;
 
   const onPointerDown = useCallback((e) => {
@@ -216,7 +216,7 @@ const ElevationDial = ({ value, min, max, onChange }) => {
     e.stopPropagation();
     dragging.current = true;
     lastY.current = e.clientY;
-    dialRef.current.setPointerCapture(e.pointerId);
+    barRef.current.setPointerCapture(e.pointerId);
   }, []);
 
   const onPointerMove = useCallback((e) => {
@@ -224,61 +224,30 @@ const ElevationDial = ({ value, min, max, onChange }) => {
     e.preventDefault();
     const dy = e.clientY - lastY.current;
     lastY.current = e.clientY;
-    // Drag down = more top-down, drag up = more flat
+    // Normalized sensitivity for vertical tilt
     const newVal = Math.max(min, Math.min(max, value + dy * 0.005));
     onChange(newVal);
   }, [value, min, max, onChange]);
 
   const onPointerUp = useCallback((e) => {
     dragging.current = false;
-    if (dialRef.current) dialRef.current.releasePointerCapture(e.pointerId);
+    if (barRef.current) barRef.current.releasePointerCapture(e.pointerId);
   }, []);
 
   return (
     <div className="mc-elev-container" title="Tilt camera angle">
       <div className="mc-dial-label">TILT</div>
       <div
-        ref={dialRef}
-        className="mc-elev-track"
+        ref={barRef}
+        className="mc-elevation-bar"
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
       >
-        {/* Arc background */}
-        <div className="mc-elev-arc">
-          <svg viewBox="0 0 64 40" width="64" height="40">
-            {/* Background arc */}
-            <path
-              d="M 4 36 A 28 28 0 0 1 60 36"
-              fill="none"
-              stroke="rgba(200, 217, 106, 0.15)"
-              strokeWidth="3"
-              strokeLinecap="round"
-            />
-            {/* Active arc */}
-            <path
-              d="M 4 36 A 28 28 0 0 1 60 36"
-              fill="none"
-              stroke="rgba(200, 217, 106, 0.6)"
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeDasharray={`${pct * 0.88} 100`}
-            />
-          </svg>
-          {/* Thumb on arc */}
-          <div
-            className="mc-elev-thumb"
-            style={{
-              left: `${8 + pct * 0.48 * 64 / 100}%`,
-              bottom: `${10 + Math.sin(pct / 100 * Math.PI) * 55}%`,
-            }}
-          />
-        </div>
-        {/* Labels */}
-        <div className="mc-elev-labels">
-          <span>◁ Flat</span>
-          <span>Top ▷</span>
+        <div className="mc-elev-track-v">
+          <div className="mc-elev-fill-v" style={{ height: `${pct}%` }} />
+          <div className="mc-elev-thumb-v" style={{ bottom: `${pct}%` }} />
         </div>
       </div>
     </div>
@@ -342,7 +311,7 @@ const MapControls = ({
       {/* Bottom control group repositioned to right side in CSS */}
       <div className="mc-bottom-group">
         <div className="mc-dials-row">
-          <ElevationDial
+          <ElevationBar
             value={localCam.elevation}
             min={elevationRange[0]}
             max={elevationRange[1]}
