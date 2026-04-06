@@ -187,9 +187,9 @@ const RotationBar = ({ value, onChange }) => {
             className="mc-bar-tape" 
             style={{ transform: `translateX(${offset}px)` }}
           >
-    <div className="mc-tape-segment"><span>N</span><span>NE</span><span>E</span><span>SE</span><span>S</span><span>SW</span><span>W</span><span>NW</span></div>
-            <div className="mc-tape-segment"><span>N</span><span>NE</span><span>E</span><span>SE</span><span>S</span><span>SW</span><span>W</span><span>NW</span></div>
-            <div className="mc-tape-segment"><span>N</span><span>NE</span><span>E</span><span>SE</span><span>S</span><span>SW</span><span>W</span><span>NW</span></div>
+            <div className="mc-tape-segment"><span>N</span><span>NW</span><span>W</span><span>SW</span><span>S</span><span>SE</span><span>E</span><span>NE</span></div>
+            <div className="mc-tape-segment"><span>N</span><span>NW</span><span>W</span><span>SW</span><span>S</span><span>SE</span><span>E</span><span>NE</span></div>
+            <div className="mc-tape-segment"><span>N</span><span>NW</span><span>W</span><span>SW</span><span>S</span><span>SE</span><span>E</span><span>NE</span></div>
           </div>
         </div>
         {/* Center fixed marker */}
