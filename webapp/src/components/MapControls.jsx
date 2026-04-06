@@ -6,14 +6,21 @@ import React, { useRef, useCallback, useEffect, useState } from 'react';
 const ZoomSlider = ({ value, min, max, onChange }) => {
   const trackRef = useRef(null);
   const dragging = useRef(false);
+  const [localValue, setLocalValue] = useState(null);
 
-  const pct = ((value - min) / (max - min)) * 100;
+  // Use localValue during drag, otherwise prop value
+  const displayValue = localValue !== null ? localValue : value;
+  const pct = ((displayValue - min) / (max - min)) * 100;
 
   const updateFromY = useCallback((clientY) => {
     const rect = trackRef.current.getBoundingClientRect();
-    // Top of track = max zoom (close), bottom = min zoom (far)
-    const ratio = 1 - Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
-    onChange(min + ratio * (max - min));
+    // Top of track = min zoom (far), bottom = max zoom (close)
+    // Wait, let's check the labels. - is top (zoom out), + is bottom (zoom in).
+    // So top = min, bottom = max.
+    const ratio = Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
+    const newVal = min + ratio * (max - min);
+    setLocalValue(newVal);
+    onChange(newVal);
   }, [min, max, onChange]);
 
   const onPointerDown = useCallback((e) => {
@@ -33,6 +40,7 @@ const ZoomSlider = ({ value, min, max, onChange }) => {
   const onPointerUp = useCallback((e) => {
     dragging.current = false;
     if (trackRef.current) trackRef.current.releasePointerCapture(e.pointerId);
+    setLocalValue(null);
   }, []);
 
   return (
@@ -136,15 +144,11 @@ const RotationBar = ({ value, onChange }) => {
   const barRef = useRef(null);
   const dragging = useRef(false);
   const lastX = useRef(0);
+  const [localValue, setLocalValue] = useState(null);
 
-  // 1. Normalize angle to 0–2π
-  const angle = ((value % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
-  
-  // 2. Map angle to tape offset
-  // We want N (0 rad) to be centered.
-  // One full rotation (2π) = 320px tape width
+  const displayValue = localValue !== null ? localValue : value;
+  const angle = ((displayValue % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
   const TAPE_WIDTH = 320;
-  // Offset moves tape LEFT as angle increases (rotating East)
   const offset = -(angle / (Math.PI * 2)) * TAPE_WIDTH;
 
   const onPointerDown = useCallback((e) => {
@@ -153,21 +157,23 @@ const RotationBar = ({ value, onChange }) => {
     dragging.current = true;
     lastX.current = e.clientX;
     barRef.current.setPointerCapture(e.pointerId);
-  }, []);
+    setLocalValue(value);
+  }, [value]);
 
   const onPointerMove = useCallback((e) => {
     if (!dragging.current) return;
     e.preventDefault();
     const dx = e.clientX - lastX.current;
     lastX.current = e.clientX;
-    // Map pixels to radians (DRAG SENSITIVITY)
-    // 320px = 2π rad, so ratio is (2π / 320)
-    onChange(value + dx * (Math.PI * 2 / TAPE_WIDTH));
-  }, [value, onChange]);
+    const delta = dx * (Math.PI * 2 / TAPE_WIDTH);
+    setLocalValue(prev => (prev !== null ? prev + delta : value + delta));
+    onChange(displayValue + delta);
+  }, [displayValue, onChange, value]);
 
   const onPointerUp = useCallback((e) => {
     dragging.current = false;
     if (barRef.current) barRef.current.releasePointerCapture(e.pointerId);
+    setLocalValue(null);
   }, []);
 
   return (
@@ -207,9 +213,10 @@ const ElevationBar = ({ value, min, max, onChange }) => {
   const barRef = useRef(null);
   const dragging = useRef(false);
   const lastY = useRef(0);
+  const [localValue, setLocalValue] = useState(null);
 
-  // Map elevation to a visual percentage (0 = top-down, 100 = flat)
-  const pct = ((value - min) / (max - min)) * 100;
+  const displayValue = localValue !== null ? localValue : value;
+  const pct = ((displayValue - min) / (max - min)) * 100;
 
   const onPointerDown = useCallback((e) => {
     e.preventDefault();
@@ -217,21 +224,24 @@ const ElevationBar = ({ value, min, max, onChange }) => {
     dragging.current = true;
     lastY.current = e.clientY;
     barRef.current.setPointerCapture(e.pointerId);
-  }, []);
+    setLocalValue(value);
+  }, [value]);
 
   const onPointerMove = useCallback((e) => {
     if (!dragging.current) return;
     e.preventDefault();
     const dy = e.clientY - lastY.current;
     lastY.current = e.clientY;
-    // Normalized sensitivity for vertical tilt
-    const newVal = Math.max(min, Math.min(max, value + dy * 0.005));
+    const delta = dy * 0.005;
+    const newVal = Math.max(min, Math.min(max, (localValue !== null ? localValue : value) + delta));
+    setLocalValue(newVal);
     onChange(newVal);
-  }, [value, min, max, onChange]);
+  }, [localValue, value, min, max, onChange]);
 
   const onPointerUp = useCallback((e) => {
     dragging.current = false;
     if (barRef.current) barRef.current.releasePointerCapture(e.pointerId);
+    setLocalValue(null);
   }, []);
 
   return (
