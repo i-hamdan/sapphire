@@ -112,7 +112,7 @@ export const DEFAULT_MAP_CONFIG = {
   },
   cameraControl: {
     reverseZoom: false,        // Default + top, - bottom
-    swapZoomIcons: false,      // Manually swap + and - icon positions
+    swapZoomIcons: true,      // Manually swap + and - icon positions
     reverseRotation: false,    // Default N-E-S-W
     reverseTilt: true,        // Default up tilts up
     reversePan: true,         // Default drag right moves right

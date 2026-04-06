@@ -31,10 +31,13 @@ const ZoomSlider = ({ value, min, max, onChange, reverse, swapIcons }) => {
     }
   }, [min, max, onChange, reverse]);
 
+  const startPos = useRef({ x: 0, y: 0 });
+
   const onPointerDown = useCallback((e) => {
     e.preventDefault();
     e.stopPropagation();
     dragging.current = true;
+    startPos.current = { x: e.clientX, y: e.clientY };
     trackRef.current.setPointerCapture(e.pointerId);
     updateFromY(e.clientY);
   }, [updateFromY]);
@@ -49,7 +52,13 @@ const ZoomSlider = ({ value, min, max, onChange, reverse, swapIcons }) => {
     dragging.current = false;
     if (trackRef.current) trackRef.current.releasePointerCapture(e.pointerId);
     setLocalValue(null);
-  }, []);
+
+    // Trigger reset if it was a simple click (not a drag)
+    const dist = Math.hypot(e.clientX - startPos.current.x, e.clientY - startPos.current.y);
+    if (dist < 3 && onChange) {
+      onChange(null, true); // Signal a reset
+    }
+  }, [onChange]);
 
   // Symbol logic:
   // 1. Natural: + top, - bottom
@@ -90,11 +99,14 @@ const PanPad = ({ onPan, reverse }) => {
   const lastPos = useRef({ x: 0, y: 0 });
   const [offset, setOffset] = useState({ x: 0, y: 0 });
 
+  const startPos = useRef({ x: 0, y: 0 });
+
   const onPointerDown = useCallback((e) => {
     e.preventDefault();
     e.stopPropagation();
     dragging.current = true;
     lastPos.current = { x: e.clientX, y: e.clientY };
+    startPos.current = { x: e.clientX, y: e.clientY };
     padRef.current.setPointerCapture(e.pointerId);
   }, []);
 
@@ -121,7 +133,13 @@ const PanPad = ({ onPan, reverse }) => {
     if (padRef.current) padRef.current.releasePointerCapture(e.pointerId);
     // Spring back the knob
     setOffset({ x: 0, y: 0 });
-  }, []);
+
+    // Trigger reset if it was a simple click
+    const dist = Math.hypot(e.clientX - startPos.current.x, e.clientY - startPos.current.y);
+    if (dist < 3 && onPan) {
+      onPan(0, 0, true); // Signal a reset
+    }
+  }, [onPan]);
 
   return (
     <div className="mc-pan-pad" title="Pan (drag to move)">
@@ -171,11 +189,14 @@ const RotationBar = ({ value, onChange, reverse }) => {
   // Visual Tape position is always natural
   const offset = -(angle / (Math.PI * 2)) * TAPE_WIDTH;
 
+  const startPos = useRef({ x: 0, y: 0 });
+
   const onPointerDown = useCallback((e) => {
     e.preventDefault();
     e.stopPropagation();
     dragging.current = true;
     lastX.current = e.clientX;
+    startPos.current = { x: e.clientX, y: e.clientY };
     barRef.current.setPointerCapture(e.pointerId);
     setLocalValue(value);
   }, [value]);
@@ -196,7 +217,13 @@ const RotationBar = ({ value, onChange, reverse }) => {
     dragging.current = false;
     if (barRef.current) barRef.current.releasePointerCapture(e.pointerId);
     setLocalValue(null);
-  }, []);
+
+    // Trigger reset if it was a simple click
+    const dist = Math.hypot(e.clientX - startPos.current.x, e.clientY - startPos.current.y);
+    if (dist < 3 && onChange) {
+      onChange(null, true); // Signal a reset
+    }
+  }, [onChange]);
 
   return (
     <div className="mc-dial-container" title="Rotate horizontally">
@@ -241,11 +268,14 @@ const ElevationBar = ({ value, min, max, onChange, reverse }) => {
   const ratioRaw = (displayValue - min) / (max - min);
   const pct = reverse ? (100 - ratioRaw * 100) : (ratioRaw * 100);
 
+  const startPos = useRef({ x: 0, y: 0 });
+
   const onPointerDown = useCallback((e) => {
     e.preventDefault();
     e.stopPropagation();
     dragging.current = true;
     lastY.current = e.clientY;
+    startPos.current = { x: e.clientX, y: e.clientY };
     barRef.current.setPointerCapture(e.pointerId);
     setLocalValue(value);
   }, [value]);
@@ -266,7 +296,13 @@ const ElevationBar = ({ value, min, max, onChange, reverse }) => {
     dragging.current = false;
     if (barRef.current) barRef.current.releasePointerCapture(e.pointerId);
     setLocalValue(null);
-  }, []);
+
+    // Trigger reset if it was a simple click
+    const dist = Math.hypot(e.clientX - startPos.current.x, e.clientY - startPos.current.y);
+    if (dist < 3 && onChange) {
+      onChange(null, true); // Signal a reset
+    }
+  }, [onChange]);
 
   return (
     <div className="mc-elev-container" title="Tilt camera angle">
@@ -292,6 +328,8 @@ const ElevationBar = ({ value, min, max, onChange, reverse }) => {
 // ─────────────────────────────────────────────
 // MAIN MapControls  — assembles all widgets
 // ─────────────────────────────────────────────
+const DEFAULTS = { zoom: 112, azimuth: 0, elevation: 0.46, panX: 0, panZ: 0 };
+
 const MapControls = ({
   camRef,
   isVisible,
@@ -299,12 +337,43 @@ const MapControls = ({
   elevationRange = [0.15, Math.PI / 2.1],
 }) => {
   const [localCam, setLocalCam] = useState({ zoom: 112, azimuth: 0, elevation: 0.46 });
+  const targetCam = useRef({ ...DEFAULTS, active: { zoom: false, azimuth: false, elevation: false, pan: false } });
 
   // Sync visual UI with the shared ref without lagging the 3D map
   useEffect(() => {
     let frameId;
     const loop = () => {
       if (camRef.current) {
+        // Smoothly interpolate towards target values if a reset is active
+        const { active } = targetCam.current;
+        const lerp = (cur, tar, speed = 0.12) => {
+          const diff = tar - cur;
+          if (Math.abs(diff) < 0.001) return tar;
+          return cur + diff * speed;
+        };
+
+        if (active.zoom) {
+          camRef.current.zoom = lerp(camRef.current.zoom, targetCam.current.zoom);
+          if (Math.abs(camRef.current.zoom - targetCam.current.zoom) < 0.1) active.zoom = false;
+        }
+        if (active.azimuth) {
+          camRef.current.azimuth = lerp(camRef.current.azimuth, targetCam.current.azimuth);
+          if (Math.abs(camRef.current.azimuth - targetCam.current.azimuth) < 0.01) active.azimuth = false;
+        }
+        if (active.elevation) {
+          camRef.current.elevation = lerp(camRef.current.elevation, targetCam.current.elevation);
+          if (Math.abs(camRef.current.elevation - targetCam.current.elevation) < 0.01) active.elevation = false;
+        }
+        if (active.pan) {
+          camRef.current.panX = lerp(camRef.current.panX, targetCam.current.panX);
+          camRef.current.panZ = lerp(camRef.current.panZ, targetCam.current.panZ);
+          if (Math.abs(camRef.current.panX) < 0.1 && Math.abs(camRef.current.panZ) < 0.1) {
+            camRef.current.panX = 0;
+            camRef.current.panZ = 0;
+            active.pan = false;
+          }
+        }
+
         setLocalCam({
           zoom: camRef.current.zoom,
           azimuth: camRef.current.azimuth,
@@ -319,12 +388,43 @@ const MapControls = ({
 
   if (!isVisible) return null;
 
-  const handleZoomChange = (v) => { if (camRef.current) camRef.current.zoom = v; };
-  const handleAzimuthChange = (v) => { if (camRef.current) camRef.current.azimuth = v; };
-  const handleElevationChange = (v) => { if (camRef.current) camRef.current.elevation = v; };
+  const handleZoomChange = (v, reset) => {
+    if (reset) {
+      targetCam.current.zoom = DEFAULTS.zoom;
+      targetCam.current.active.zoom = true;
+    } else if (camRef.current) {
+      camRef.current.zoom = v;
+      targetCam.current.active.zoom = false;
+    }
+  };
+  const handleAzimuthChange = (v, reset) => {
+    if (reset) {
+      targetCam.current.azimuth = DEFAULTS.azimuth;
+      targetCam.current.active.azimuth = true;
+    } else if (camRef.current) {
+      camRef.current.azimuth = v;
+      targetCam.current.active.azimuth = false;
+    }
+  };
+  const handleElevationChange = (v, reset) => {
+    if (reset) {
+      targetCam.current.elevation = DEFAULTS.elevation;
+      targetCam.current.active.elevation = true;
+    } else if (camRef.current) {
+      camRef.current.elevation = v;
+      targetCam.current.active.elevation = false;
+    }
+  };
   
-  const handlePan = (dx, dy) => {
+  const handlePan = (dx, dy, reset) => {
+    if (reset) {
+      targetCam.current.panX = DEFAULTS.panX;
+      targetCam.current.panZ = DEFAULTS.panZ;
+      targetCam.current.active.pan = true;
+      return;
+    }
     if (!camRef.current) return;
+    targetCam.current.active.pan = false;
     const cosA = Math.cos(camRef.current.azimuth);
     const sinA = Math.sin(camRef.current.azimuth);
     const panSpeed = camRef.current.zoom * 0.003;
