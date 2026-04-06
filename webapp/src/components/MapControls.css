@@ -55,9 +55,8 @@
    ══════════════════════════════════════════ */
 .mc-zoom-slider {
   position: absolute;
-  right: 18px;
-  top: 50%;
-  transform: translateY(-50%);
+  right: 34px; /* Centered over Pan pad (86px) which is 4px from right */
+  bottom: 150px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -130,8 +129,8 @@
    ══════════════════════════════════════════ */
 .mc-bottom-group {
   position: absolute;
-  bottom: 110px;
-  left: 18px;
+  bottom: 24px;
+  right: 4px;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -141,8 +140,8 @@
 
 .mc-dials-row {
   display: flex;
-  gap: 10px;
-  align-items: flex-start;
+  gap: 20px;
+  align-items: flex-end;
 }
 
 
@@ -373,12 +372,13 @@
     height: 54px;
   }
   .mc-bottom-group {
-    bottom: 95px;
-    left: 12px;
+    bottom: 20px;
+    right: 12px;
     gap: 8px;
   }
   .mc-zoom-slider {
-    right: 12px;
+    right: 32px;
+    bottom: 120px;
   }
 }
 

@@ -337,20 +337,20 @@ const MapControls = ({
         onChange={handleZoomChange}
       />
 
-      {/* Bottom-left group */}
+      {/* Bottom control group repositioned to right side in CSS */}
       <div className="mc-bottom-group">
-        <PanPad onPan={handlePan} />
         <div className="mc-dials-row">
-          <RotationDial
-            value={localCam.azimuth}
-            onChange={handleAzimuthChange}
-          />
           <ElevationDial
             value={localCam.elevation}
             min={elevationRange[0]}
             max={elevationRange[1]}
             onChange={handleElevationChange}
           />
+          <RotationDial
+            value={localCam.azimuth}
+            onChange={handleAzimuthChange}
+          />
+          <PanPad onPan={handlePan} />
         </div>
       </div>
     </div>
