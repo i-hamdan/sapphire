@@ -4,12 +4,12 @@ import { DEFAULT_MAP_CONFIG } from '../config/mapConfig';
 // ─────────────────────────────────────────────
 // ZOOM SLIDER  — vertical slider on right edge
 // ─────────────────────────────────────────────
-const ZoomSlider = ({ value, min, max, onChange, reverse }) => {
+const ZoomSlider = ({ value, min, max, onChange, reverse, swapIcons }) => {
   const trackRef = useRef(null);
   const dragging = useRef(false);
   const [localValue, setLocalValue] = useState(null);
 
-  // UI always shows position relative to the icons (+ top, - bottom)
+  // UI always shows position relative to the icons (+ top, - bottom by default)
   // If reverse is active, high map values (Zoom In) map to bottom handle position
   const displayValue = localValue !== null ? localValue : value;
   const ratioRaw = (displayValue - min) / (max - min);
@@ -51,8 +51,15 @@ const ZoomSlider = ({ value, min, max, onChange, reverse }) => {
     setLocalValue(null);
   }, []);
 
-  const topSymbol = reverse ? "−" : "+";
-  const bottomSymbol = reverse ? "+" : "−";
+  // Symbol logic:
+  // 1. Natural: + top, - bottom
+  // 2. If reverse: flip them to match inverted drag
+  // 3. If swapIcons: flip them back manually if the user wants symbols in specific places
+  let topSymbol = reverse ? "−" : "+";
+  let bottomSymbol = reverse ? "+" : "−";
+  if (swapIcons) {
+    [topSymbol, bottomSymbol] = [bottomSymbol, topSymbol];
+  }
 
   return (
     <div className="mc-zoom-slider" title="Zoom">
@@ -336,6 +343,7 @@ const MapControls = ({
         max={zoomRange[1]}
         onChange={handleZoomChange}
         reverse={cameraControl.reverseZoom}
+        swapIcons={cameraControl.swapZoomIcons}
       />
 
       {/* Bottom control group repositioned to right side in CSS */}
