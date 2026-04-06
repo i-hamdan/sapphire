@@ -469,12 +469,12 @@ const MapControls = ({
             onChange={handleElevationChange}
             reverse={cameraControl.reverseTilt}
           />
+          <PanPad onPan={handlePan} reverse={cameraControl.reversePan} />
           <RotationBar
             value={localCam.azimuth}
             onChange={handleAzimuthChange}
             reverse={cameraControl.reverseRotation}
           />
-          <PanPad onPan={handlePan} reverse={cameraControl.reversePan} />
         </div>
       </div>
     </div>

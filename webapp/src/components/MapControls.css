@@ -130,9 +130,11 @@
 .mc-bottom-group {
   position: absolute;
   bottom: 24px;
-  right: 4px;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 12px;
   pointer-events: auto;
   z-index: 42;
@@ -141,7 +143,7 @@
 .mc-dials-row {
   display: flex;
   gap: 20px;
-  align-items: flex-end;
+  align-items: center; /* Center horizontally aligned items */
 }
 
 
@@ -247,7 +249,7 @@
 
 .mc-rotation-bar {
   width: 140px;
-  height: 44px;
+  height: 86px; /* Matches Pan Pad and Tilt for symmetry */
   background: rgba(13, 26, 14, 0.85);
   border: 1.5px solid rgba(200, 217, 106, 0.22);
   border-radius: 8px;
@@ -335,7 +337,7 @@
    ══════════════════════════════════════════ */
 .mc-elevation-bar {
   width: 44px;
-  height: 44px;
+  height: 86px; /* Matches Pan Pad diameter */
   background: rgba(13, 26, 14, 0.85);
   border: 1.5px solid rgba(200, 217, 106, 0.22);
   border-radius: 8px;
@@ -402,7 +404,9 @@
   }
   .mc-bottom-group {
     bottom: 20px;
-    right: 12px;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
     gap: 8px;
   }
   .mc-zoom-slider {
