@@ -1,13 +1,37 @@
 import React from 'react'
 import InteractiveMap3D from './components/InteractiveMap3D'
 import './App.css'
+import heroVideo from './assets/hero-bg.mp4'
 
 function App() {
   return (
     <div className="app-container">
+      <header className="hero">
+        <video 
+          autoPlay 
+          muted 
+          loop 
+          playsInline 
+          className="hero-video"
+        >
+          <source src={heroVideo} type="video/mp4" />
+        </video>
+        <div className="hero-overlay"></div>
+        <div className="hero-content">
+          <h1>Experience Luxury Living</h1>
+          <p>Discover your dream farmhouse at Sapphire – where nature meets elegance.</p>
+          <div 
+            className="scroll-hint" 
+            onClick={() => document.getElementById('map').scrollIntoView({ behavior: 'smooth' })}
+          >
+            <span>Explore Map</span>
+            <div className="arrow"></div>
+          </div>
+        </div>
+      </header>
 
       <main>
-        <section className="map-section">
+        <section className="map-section" id="map">
           <InteractiveMap3D />
         </section>
 

@@ -93,6 +93,7 @@ const CameraController = ({
   onResetComplete,
   // Free-camera parameters
   camRef,
+  isLocked,
 }) => {
   const { camera } = useThree();
   const controlsRef = useRef();
@@ -172,10 +173,10 @@ const CameraController = ({
       ref={controlsRef}
       enableDamping
       dampingFactor={0.05}
-      // Disable all built-in interactions in free mode — we handle them
-      enableRotate={!!selectedPlot}
-      enableZoom={!!selectedPlot}
-      enablePan={!!selectedPlot}
+      // Disable all built-in interactions when locked or in free mode
+      enableRotate={!isLocked && !!selectedPlot}
+      enableZoom={!isLocked && !!selectedPlot}
+      enablePan={!isLocked && !!selectedPlot}
       minDistance={selectedPlot ? 2 : 0.1}
       maxDistance={selectedPlot ? 800 : 10000}
       maxPolarAngle={selectedPlot ? Math.PI / 2.1 : Math.PI / 1.5}
@@ -1663,12 +1664,11 @@ const InteractiveMap3D = () => {
   const [showConfig, setShowConfig] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [mapConfig, setMapConfig] = useState(DEFAULT_MAP_CONFIG);
+  const [isLocked, setIsLocked] = useState(true);
 
   // ── Custom camera state ──
   const camRef = useRef({ ...DEFAULT_CAM });
-
   const canvasContainerRef = useRef(null);
-
   const selectedPlotRef = useRef(null);
   useEffect(() => { selectedPlotRef.current = selectedPlot; }, [selectedPlot]);
 
@@ -1681,7 +1681,6 @@ const InteractiveMap3D = () => {
   const resetCamera = useCallback(() => {
     setSelectedPlot(null);
     setIsResetting(true);
-    // Restore default free-camera state
     camRef.current = { ...DEFAULT_CAM };
   }, []);
 
@@ -1698,161 +1697,85 @@ const InteractiveMap3D = () => {
     }
   }, [resetCamera]);
 
-  // ── Touch event handling for the canvas ──
+  // ─────────────────────────────────────────────
+  // CUSTOM INPUT HANDLING — Wheel, Touch, Mouse
+  // ─────────────────────────────────────────────
   useEffect(() => {
     const el = canvasContainerRef.current;
-    if (!el || selectedPlot) return;
+    if (!el) return;
 
-    let touchState = null;
+    let mouseState = null;
 
-    const getTouchCenter = (touches) => {
-      let x = 0, y = 0;
-      for (let i = 0; i < touches.length; i++) {
-        x += touches[i].clientX;
-        y += touches[i].clientY;
-      }
-      return { x: x / touches.length, y: y / touches.length };
-    };
-
-    const getTouchSpread = (touches) => {
-      if (touches.length < 2) return 0;
-      const dx = touches[0].clientX - touches[1].clientX;
-      const dy = touches[0].clientY - touches[1].clientY;
-      return Math.sqrt(dx * dx + dy * dy);
+    const onWheel = (e) => {
+      if (isLocked) return;
+      e.preventDefault();
+      if (!camRef.current) return;
+      const zoomSpeed = camRef.current.zoom * 0.0012;
+      const newVal = camRef.current.zoom + e.deltaY * zoomSpeed;
+      camRef.current.zoom = Math.max(ZOOM_RANGE[0], Math.min(ZOOM_RANGE[1], newVal));
     };
 
     const onTouchStart = (e) => {
-      if (e.touches.length === 1) {
-        touchState = {
-          type: 'pan',
-          startX: e.touches[0].clientX,
-          startY: e.touches[0].clientY,
-          lastX: e.touches[0].clientX,
-          lastY: e.touches[0].clientY,
-        };
-      } else if (e.touches.length === 2) {
-        const center = getTouchCenter(e.touches);
-        touchState = {
-          type: 'rotate',
-          lastX: center.x,
-          lastY: center.y,
-          lastSpread: getTouchSpread(e.touches),
-        };
-        e.preventDefault();
+      if (isLocked) return;
+      if (e.touches.length === 2) {
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        mouseState = { type: 'pinch', dist: Math.hypot(dx, dy), startZoom: camRef.current.zoom };
+      } else if (e.touches.length === 1) {
+        mouseState = { type: 'pan', x: e.touches[0].clientX, y: e.touches[0].clientY };
       }
     };
 
     const onTouchMove = (e) => {
-      if (!touchState) return;
-
-      if (touchState.type === 'pan' && e.touches.length === 1) {
-        // ── 1-finger: Pan across ground plane ──
-        const dx = e.touches[0].clientX - touchState.lastX;
-        const dy = e.touches[0].clientY - touchState.lastY;
-        touchState.lastX = e.touches[0].clientX;
-        touchState.lastY = e.touches[0].clientY;
-
-        const cur = camRef.current;
-        const cosA = Math.cos(cur.azimuth);
-        const sinA = Math.sin(cur.azimuth);
-        const panSpeed = cur.zoom * 0.004;
-        cur.panX -= (dx * cosA + dy * sinA) * panSpeed;
-        cur.panZ -= (-dx * sinA + dy * cosA) * panSpeed;
-
-      } else if (touchState.type === 'rotate' && e.touches.length === 2) {
-        // ── 2-finger: Rotate + pinch zoom ──
+      if (isLocked || !mouseState || !camRef.current) return;
+      if (mouseState.type === 'pinch' && e.touches.length === 2) {
         e.preventDefault();
-        const center = getTouchCenter(e.touches);
-        const spread = getTouchSpread(e.touches);
-
-        const dx = center.x - touchState.lastX;
-        const dy = center.y - touchState.lastY;
-        touchState.lastX = center.x;
-        touchState.lastY = center.y;
-
-        const cur = camRef.current;
-        // Horizontal drag → azimuth rotation
-        cur.azimuth += dx * 0.006;
-        // Vertical drag → elevation tilt
-        cur.elevation = Math.max(ELEVATION_RANGE[0], Math.min(ELEVATION_RANGE[1], cur.elevation + dy * 0.004));
-
-        // Pinch → zoom
-        if (touchState.lastSpread > 0) {
-          const spreadDelta = spread - touchState.lastSpread;
-          cur.zoom = Math.max(ZOOM_RANGE[0], Math.min(ZOOM_RANGE[1], cur.zoom - spreadDelta * 0.3));
-        }
-        touchState.lastSpread = spread;
-
-      } else if (e.touches.length === 2 && touchState.type === 'pan') {
-        // Transitioned from 1-finger to 2-finger
-        const center = getTouchCenter(e.touches);
-        touchState = {
-          type: 'rotate',
-          lastX: center.x,
-          lastY: center.y,
-          lastSpread: getTouchSpread(e.touches),
-        };
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        const newDist = Math.hypot(dx, dy);
+        const factor = mouseState.dist / newDist;
+        camRef.current.zoom = Math.max(ZOOM_RANGE[0], Math.min(ZOOM_RANGE[1], mouseState.startZoom * factor));
+      } else if (mouseState.type === 'pan' && e.touches.length === 1) {
         e.preventDefault();
+        const dx = e.touches[0].clientX - mouseState.x;
+        const dy = e.touches[0].clientY - mouseState.y;
+        mouseState.x = e.touches[0].clientX;
+        mouseState.y = e.touches[0].clientY;
+        const panSpeed = camRef.current.zoom * 0.003 * (window.devicePixelRatio || 1);
+        const cosA = Math.cos(camRef.current.azimuth);
+        const sinA = Math.sin(camRef.current.azimuth);
+        camRef.current.panX -= (dx * cosA + dy * sinA) * panSpeed;
+        camRef.current.panZ -= (-dx * sinA + dy * cosA) * panSpeed;
       }
     };
 
-    const onTouchEnd = (e) => {
-      if (e.touches.length === 0) {
-        touchState = null;
-      } else if (e.touches.length === 1) {
-        // Went from 2 fingers to 1 — switch to pan
-        touchState = {
-          type: 'pan',
-          startX: e.touches[0].clientX,
-          startY: e.touches[0].clientY,
-          lastX: e.touches[0].clientX,
-          lastY: e.touches[0].clientY,
-        };
-      }
-    };
-
-    // ── Mouse wheel zoom for desktop ──
-    const onWheel = (e) => {
-      e.preventDefault();
-      const cur = camRef.current;
-      cur.zoom = Math.max(ZOOM_RANGE[0], Math.min(ZOOM_RANGE[1], cur.zoom + e.deltaY * 0.08));
-    };
-
-    // ── Mouse drag for desktop ──
-    let mouseState = null;
+    const onTouchEnd = () => { mouseState = null; };
 
     const onMouseDown = (e) => {
-      if (e.button === 0) {
-        // Left click = pan
-        mouseState = { type: 'pan', lastX: e.clientX, lastY: e.clientY };
-      } else if (e.button === 2) {
-        // Right click = rotate
-        mouseState = { type: 'rotate', lastX: e.clientX, lastY: e.clientY };
-      }
+      if (isLocked) return;
+      mouseState = { type: e.button === 0 ? 'pan' : 'orbit', x: e.clientX, y: e.clientY };
     };
 
     const onMouseMove = (e) => {
-      if (!mouseState) return;
-      const dx = e.clientX - mouseState.lastX;
-      const dy = e.clientY - mouseState.lastY;
-      mouseState.lastX = e.clientX;
-      mouseState.lastY = e.clientY;
+      if (isLocked || !mouseState || !camRef.current) return;
+      const dx = e.clientX - mouseState.x;
+      const dy = e.clientY - mouseState.y;
+      mouseState.x = e.clientX;
+      mouseState.y = e.clientY;
 
-      const cur = camRef.current;
       if (mouseState.type === 'pan') {
-        const cosA = Math.cos(cur.azimuth);
-        const sinA = Math.sin(cur.azimuth);
-        const panSpeed = cur.zoom * 0.003;
-        cur.panX -= (dx * cosA + dy * sinA) * panSpeed;
-        cur.panZ -= (-dx * sinA + dy * cosA) * panSpeed;
-      } else if (mouseState.type === 'rotate') {
-        cur.azimuth += dx * 0.005;
-        cur.elevation = Math.max(ELEVATION_RANGE[0], Math.min(ELEVATION_RANGE[1], cur.elevation + dy * 0.004));
+        const panSpeed = camRef.current.zoom * 0.002;
+        const cosA = Math.cos(camRef.current.azimuth);
+        const sinA = Math.sin(camRef.current.azimuth);
+        camRef.current.panX -= (dx * cosA + dy * sinA) * panSpeed;
+        camRef.current.panZ -= (-dx * sinA + dy * cosA) * panSpeed;
+      } else if (mouseState.type === 'orbit') {
+        camRef.current.azimuth += dx * 0.005;
+        camRef.current.elevation = Math.max(ELEVATION_RANGE[0], Math.min(ELEVATION_RANGE[1], camRef.current.elevation + dy * 0.004));
       }
     };
 
     const onMouseUp = () => { mouseState = null; };
-
     const onContextMenu = (e) => { e.preventDefault(); };
 
     el.addEventListener('touchstart', onTouchStart, { passive: false });
@@ -1876,12 +1799,10 @@ const InteractiveMap3D = () => {
       el.removeEventListener('mouseleave', onMouseUp);
       el.removeEventListener('contextmenu', onContextMenu);
     };
-  }, [selectedPlot]);
-
+  }, [isLocked, selectedPlot]);
 
   return (
-    <div className="map-container" style={{ width: '100vw', height: '100vh', position: 'relative', background: '#0a1208' }}>
-
+    <div className="map-3d-container">
       <div className="brand-overlay">
         <div className="brand-badge">
           <div className="lotus-icon">
@@ -1898,7 +1819,17 @@ const InteractiveMap3D = () => {
         </div>
       </div>
 
-      <div ref={canvasContainerRef} style={{ width: '100%', height: '100%', touchAction: 'none' }}>
+      {isLocked && (
+        <div className="interaction-overlay" onClick={() => setIsLocked(false)}>
+          <div className="overlay-content">
+            <div className="overlay-icon">🖱️</div>
+            <h3>Click to Interact</h3>
+            <p>Explore the 3D map of Sapphire Farmhouse</p>
+          </div>
+        </div>
+      )}
+
+      <div ref={canvasContainerRef} style={{ width: '100%', height: '100%', touchAction: isLocked ? 'auto' : 'none', pointerEvents: isLocked ? 'none' : 'auto' }}>
         <Canvas
           shadows
           camera={{ position: [0, 100, 50], fov: 50 }}
@@ -1919,6 +1850,7 @@ const InteractiveMap3D = () => {
             isResetting={isResetting}
             onResetComplete={() => setIsResetting(false)}
             camRef={camRef}
+            isLocked={isLocked}
           />
 
           <Traffic config={mapConfig} />
@@ -1947,7 +1879,6 @@ const InteractiveMap3D = () => {
         </Canvas>
       </div>
 
-      {/* On-screen navigation controls (only in free-camera mode) */}
       <MapControls
         camRef={camRef}
         isVisible={!selectedPlot && showControls}
@@ -1962,7 +1893,6 @@ const InteractiveMap3D = () => {
             <polyline points="9 22 9 12 15 12 15 22" />
           </svg>
         </button>
-        {/* Controls toggle */}
         <button
           className={`view-btn icon-btn ${showControls ? 'active' : ''}`}
           onClick={() => setShowControls(p => !p)}

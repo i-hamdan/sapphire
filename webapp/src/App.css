@@ -34,26 +34,102 @@ h1, h2, h3, h4 {
 
 /* Hero Section */
 .hero {
-  background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
-  color: white;
-  padding: 60px 24px;
+  position: relative;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   text-align: center;
+  color: white;
+  isolation: isolate; /* Fixes stacking of negative z-index children */
+}
+
+.hero-video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: -2;
+}
+
+.hero-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    rgba(0, 0, 0, 0.4),
+    rgba(0, 0, 0, 0.2) 60%,
+    rgba(0, 0, 0, 0.7)
+  );
+  z-index: -1;
+}
+
+.hero-content {
+  max-width: 800px;
+  padding: 0 24px;
+  z-index: 1;
 }
 
 .hero-content h1 {
-  font-size: 2.5rem;
+  font-size: 3.5rem;
   font-weight: 700;
-  margin-bottom: 8px;
-  background: linear-gradient(to right, #cfd9df 0%, #e2ebf0 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  line-height: 1.1;
+  margin-bottom: 20px;
+  text-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  letter-spacing: -0.02em;
 }
 
 .hero-content p {
-  font-size: 1.1rem;
-  color: #ced4da;
+  font-size: 1.25rem;
+  color: rgba(255, 255, 255, 0.9);
   font-weight: 300;
-  letter-spacing: 0.5px;
+  margin-bottom: 40px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.scroll-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  opacity: 0.8;
+  transition: opacity 0.3s ease;
+  margin-top: 40px;
+}
+
+.scroll-hint:hover {
+  opacity: 1;
+}
+
+.scroll-hint span {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-weight: 600;
+}
+
+.arrow {
+  width: 20px;
+  height: 20px;
+  border-bottom: 2px solid white;
+  border-right: 2px solid white;
+  transform: rotate(45deg);
+  animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {transform: translateY(0) rotate(45deg);}
+  40% {transform: translateY(-10px) rotate(45deg);}
+  60% {transform: translateY(-5px) rotate(45deg);}
 }
 
 /* Map Section */
@@ -110,11 +186,11 @@ h1, h2, h3, h4 {
 }
 
 @media (min-width: 768px) {
-  .hero {
-    padding: 100px 24px;
-  }
   .hero-content h1 {
-    font-size: 4rem;
+    font-size: 5rem;
+  }
+  .hero-content p {
+    font-size: 1.5rem;
   }
   .amenities-grid {
     grid-template-columns: repeat(3, 1fr);
