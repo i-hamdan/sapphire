@@ -10,13 +10,13 @@ const ZoomSlider = ({ value, min, max, onChange }) => {
 
   // Use localValue during drag, otherwise prop value
   const displayValue = localValue !== null ? localValue : value;
-  const pct = ((displayValue - min) / (max - min)) * 100;
+  // Visual Alignment: - (Zoom Out/Min) is at the top (bottom: 100%), + (Zoom In/Max) is at the bottom (bottom: 0%)
+  const pct = 100 - ((displayValue - min) / (max - min)) * 100;
 
   const updateFromY = useCallback((clientY) => {
     const rect = trackRef.current.getBoundingClientRect();
-    // Top of track = min zoom (far), bottom = max zoom (close)
-    // Wait, let's check the labels. - is top (zoom out), + is bottom (zoom in).
-    // So top = min, bottom = max.
+    // Top of track (clientY = rect.top) -> ratio = 0 -> newVal = min (Zoom Out)
+    // Bottom of track (clientY = rect.bottom) -> ratio = 1 -> newVal = max (Zoom In)
     const ratio = Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
     const newVal = min + ratio * (max - min);
     setLocalValue(newVal);
