@@ -132,20 +132,27 @@ const PanPad = ({ onPan }) => {
 // ─────────────────────────────────────────────
 // ROTATION DIAL  — horizontal (azimuth) rotation
 // ─────────────────────────────────────────────
-const RotationDial = ({ value, onChange }) => {
-  const dialRef = useRef(null);
+const RotationBar = ({ value, onChange }) => {
+  const barRef = useRef(null);
   const dragging = useRef(false);
   const lastX = useRef(0);
 
-  // Normalize angle for display (0-360)
-  const degrees = ((value * 180 / Math.PI) % 360 + 360) % 360;
+  // 1. Normalize angle to 0–2π
+  const angle = ((value % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+  
+  // 2. Map angle to tape offset
+  // We want N (0 rad) to be centered.
+  // One full rotation (2π) = 320px tape width
+  const TAPE_WIDTH = 320;
+  // Offset moves tape LEFT as angle increases (rotating East)
+  const offset = -(angle / (Math.PI * 2)) * TAPE_WIDTH;
 
   const onPointerDown = useCallback((e) => {
     e.preventDefault();
     e.stopPropagation();
     dragging.current = true;
     lastX.current = e.clientX;
-    dialRef.current.setPointerCapture(e.pointerId);
+    barRef.current.setPointerCapture(e.pointerId);
   }, []);
 
   const onPointerMove = useCallback((e) => {
@@ -153,45 +160,40 @@ const RotationDial = ({ value, onChange }) => {
     e.preventDefault();
     const dx = e.clientX - lastX.current;
     lastX.current = e.clientX;
-    // Map horizontal drag to azimuth change
-    onChange(value + dx * 0.008);
+    // Map pixels to radians (DRAG SENSITIVITY)
+    // 320px = 2π rad, so ratio is (2π / 320)
+    onChange(value + dx * (Math.PI * 2 / TAPE_WIDTH));
   }, [value, onChange]);
 
   const onPointerUp = useCallback((e) => {
     dragging.current = false;
-    if (dialRef.current) dialRef.current.releasePointerCapture(e.pointerId);
+    if (barRef.current) barRef.current.releasePointerCapture(e.pointerId);
   }, []);
 
   return (
     <div className="mc-dial-container" title="Rotate horizontally">
       <div className="mc-dial-label">ROTATE</div>
       <div
-        ref={dialRef}
-        className="mc-dial-ring"
+        ref={barRef}
+        className="mc-rotation-bar"
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
       >
-        {/* Cardinal marks */}
-        <div className="mc-dial-mark mc-dial-mark-n">N</div>
-        <div className="mc-dial-mark mc-dial-mark-e">E</div>
-        <div className="mc-dial-mark mc-dial-mark-s">S</div>
-        <div className="mc-dial-mark mc-dial-mark-w">W</div>
-        {/* Rotating indicator */}
-        <div
-          className="mc-dial-indicator"
-          style={{ transform: `rotate(${degrees}deg)` }}
-        >
-          <div className="mc-dial-dot" />
+        <div className="mc-bar-track">
+          {/* We repeat the markings to allow "infinite" feel during the move */}
+          <div 
+            className="mc-bar-tape" 
+            style={{ transform: `translateX(${offset}px)` }}
+          >
+            <div className="mc-tape-segment"><span>W</span><span>N</span><span>E</span><span>S</span></div>
+            <div className="mc-tape-segment"><span>W</span><span>N</span><span>E</span><span>S</span></div>
+            <div className="mc-tape-segment"><span>W</span><span>N</span><span>E</span><span>S</span></div>
+          </div>
         </div>
-        {/* Center icon */}
-        <div className="mc-dial-center">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="16" height="16">
-            <path d="M12 2v2M12 20v2M2 12h2M20 12h2" />
-            <circle cx="12" cy="12" r="3" />
-          </svg>
-        </div>
+        {/* Center fixed marker */}
+        <div className="mc-bar-center-mark" />
       </div>
     </div>
   );
@@ -346,7 +348,7 @@ const MapControls = ({
             max={elevationRange[1]}
             onChange={handleElevationChange}
           />
-          <RotationDial
+          <RotationBar
             value={localCam.azimuth}
             onChange={handleAzimuthChange}
           />
