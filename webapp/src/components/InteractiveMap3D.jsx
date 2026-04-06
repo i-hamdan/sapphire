@@ -1822,15 +1822,19 @@ const InteractiveMap3D = () => {
     const onMouseUp = () => { mouseState = null; };
     const onContextMenu = (e) => { e.preventDefault(); };
 
-    el.addEventListener('touchstart', onTouchStart, { passive: false });
-    el.addEventListener('touchmove', onTouchMove, { passive: false });
     el.addEventListener('touchend', onTouchEnd, { passive: true });
-    el.addEventListener('wheel', onWheel, { passive: false });
-    el.addEventListener('mousedown', onMouseDown);
-    el.addEventListener('mousemove', onMouseMove);
-    el.addEventListener('mouseup', onMouseUp);
-    el.addEventListener('mouseleave', onMouseUp);
+    el.addEventListener('mouseup', onMouseUp, { passive: true });
     el.addEventListener('contextmenu', onContextMenu);
+
+    if (!isLocked) {
+      el.addEventListener('touchstart', onTouchStart, { passive: false });
+      el.addEventListener('touchmove', onTouchMove, { passive: false });
+      el.addEventListener('wheel', onWheel, { passive: false });
+      el.addEventListener('mousedown', onMouseDown);
+      el.addEventListener('mousemove', onMouseMove);
+      el.addEventListener('mouseup', onMouseUp);
+      el.addEventListener('mouseleave', onMouseUp);
+    }
 
     return () => {
       el.removeEventListener('touchstart', onTouchStart);
@@ -1879,12 +1883,13 @@ const InteractiveMap3D = () => {
         style={{ 
           width: '100%', 
           height: '100%', 
-          touchAction: 'none', 
+          touchAction: isLocked ? 'auto' : 'none', 
           cursor: isLocked ? 'pointer' : 'crosshair'
         }}
       >
         <Canvas
           shadows
+          style={{ pointerEvents: isLocked ? 'none' : 'auto' }}
           camera={{ position: [0, 100, 50], fov: 50 }}
           gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 1.1 }}
         >
