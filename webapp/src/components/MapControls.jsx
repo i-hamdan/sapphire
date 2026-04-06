@@ -9,9 +9,11 @@ const ZoomSlider = ({ value, min, max, onChange, reverse }) => {
   const dragging = useRef(false);
   const [localValue, setLocalValue] = useState(null);
 
-  // UI always shows natural position (+ top, - bottom)
+  // UI always shows position relative to the icons (+ top, - bottom)
+  // If reverse is active, high map values (Zoom In) map to bottom handle position
   const displayValue = localValue !== null ? localValue : value;
-  const pct = ((displayValue - min) / (max - min)) * 100;
+  const ratioRaw = (displayValue - min) / (max - min);
+  const pct = reverse ? (100 - ratioRaw * 100) : (ratioRaw * 100);
 
   const updateFromY = useCallback((clientY) => {
     const rect = trackRef.current.getBoundingClientRect();
@@ -49,9 +51,12 @@ const ZoomSlider = ({ value, min, max, onChange, reverse }) => {
     setLocalValue(null);
   }, []);
 
+  const topSymbol = reverse ? "−" : "+";
+  const bottomSymbol = reverse ? "+" : "−";
+
   return (
     <div className="mc-zoom-slider" title="Zoom">
-      <div className="mc-zoom-icon mc-zoom-icon-plus">+</div>
+      <div className="mc-zoom-icon">{topSymbol}</div>
       <div
         ref={trackRef}
         className="mc-zoom-track"
@@ -63,7 +68,7 @@ const ZoomSlider = ({ value, min, max, onChange, reverse }) => {
         <div className="mc-zoom-fill" style={{ height: `${pct}%` }} />
         <div className="mc-zoom-thumb" style={{ bottom: `${pct}%` }} />
       </div>
-      <div className="mc-zoom-icon mc-zoom-icon-minus">−</div>
+      <div className="mc-zoom-icon">{bottomSymbol}</div>
     </div>
   );
 };
@@ -226,7 +231,8 @@ const ElevationBar = ({ value, min, max, onChange, reverse }) => {
   const [localValue, setLocalValue] = useState(null);
 
   const displayValue = localValue !== null ? localValue : value;
-  const pct = ((displayValue - min) / (max - min)) * 100;
+  const ratioRaw = (displayValue - min) / (max - min);
+  const pct = reverse ? (100 - ratioRaw * 100) : (ratioRaw * 100);
 
   const onPointerDown = useCallback((e) => {
     e.preventDefault();

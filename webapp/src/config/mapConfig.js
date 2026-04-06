@@ -111,10 +111,10 @@ export const DEFAULT_MAP_CONFIG = {
     logoWidth: "200px",       // Width of the logo in the overlay
   },
   cameraControl: {
-    reverseZoom: false,        // Default + top, - bottom
+    reverseZoom: true,        // Default + top, - bottom
     reverseRotation: false,    // Default N-E-S-W
-    reverseTilt: false,        // Default up tilts up
-    reversePan: false,         // Default drag right moves right
+    reverseTilt: true,        // Default up tilts up
+    reversePan: true,         // Default drag right moves right
   }
 };
 
