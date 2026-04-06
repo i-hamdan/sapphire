@@ -37,7 +37,7 @@ const ZoomSlider = ({ value, min, max, onChange }) => {
 
   return (
     <div className="mc-zoom-slider" title="Zoom">
-      <div className="mc-zoom-icon mc-zoom-icon-plus">+</div>
+      <div className="mc-zoom-icon mc-zoom-icon-minus">−</div>
       <div
         ref={trackRef}
         className="mc-zoom-track"
@@ -49,7 +49,7 @@ const ZoomSlider = ({ value, min, max, onChange }) => {
         <div className="mc-zoom-fill" style={{ height: `${pct}%` }} />
         <div className="mc-zoom-thumb" style={{ bottom: `${pct}%` }} />
       </div>
-      <div className="mc-zoom-icon mc-zoom-icon-minus">−</div>
+      <div className="mc-zoom-icon mc-zoom-icon-plus">+</div>
     </div>
   );
 };
