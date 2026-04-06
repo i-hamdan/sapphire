@@ -2,6 +2,7 @@ import React from 'react'
 import InteractiveMap3D from './components/InteractiveMap3D'
 import './App.css'
 import heroVideo from './assets/hero-bg.mp4'
+import logo from './assets/logos/transparent_logo.png'
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
         </video>
         <div className="hero-overlay"></div>
         <div className="hero-content">
+          <img src={logo} alt="Sapphire Logo" className="hero-logo" />
           <h1>Experience Luxury Living</h1>
           <p>Discover your dream farmhouse at Sapphire – where nature meets elegance.</p>
           <div 

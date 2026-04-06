@@ -105,6 +105,10 @@ export const DEFAULT_MAP_CONFIG = {
     matteMode: true,         // Toggle between glossy and matte-flat texture
     showShadow: true,         // Toggle drop shadow
     shadowOpacity: 0.25       // Darkness of the floor shadow
+  },
+  brandOverlay: {
+    isVisible: false,          // Toggle brand logo visibility
+    logoWidth: "200px",       // Width of the logo in the overlay
   }
 };
 

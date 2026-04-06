@@ -17,7 +17,8 @@ import plotDetails from '../assets/plot_details.json';
 import plotFacingData from '../assets/plot_facing_data.json';
 import { PhotoPin } from './PhotoPin';
 import { PanoramaViewer } from './PanoramaViewer';
-import './InteractiveMap.css';
+import './InteractiveMap.css'
+import logo from '../assets/logos/transparent_logo.png';
 
 const viewWidth = 1696;
 const viewHeight = 2514;
@@ -147,7 +148,11 @@ const CameraController = ({
       hasReset.current = true;
       onResetComplete();
 
-    } else if (!selectedPlot && !isResetting && camRef.current) {
+    } else if (!isResetting) {
+      // Keep reset flag ready for next time
+      hasReset.current = false;
+      
+      if (!selectedPlot && camRef.current) {
       // ── Free-camera: compute position from external state ──
       const cur = camRef.current;
       const sinEl = Math.sin(cur.elevation);
@@ -164,7 +169,7 @@ const CameraController = ({
       camera.position.lerp(vecPos, 8 * delta);
       controlsRef.current.target.lerp(vecLook, 8 * delta);
     }
-
+}
     controlsRef.current.update();
   });
 
@@ -1661,9 +1666,8 @@ const InteractiveMap3D = () => {
   const [selectedPlot, setSelectedPlot] = useState(null);
   const [activePanorama, setActivePanorama] = useState(null);
   const [isResetting, setIsResetting] = useState(false);
-  const [showConfig, setShowConfig] = useState(false);
   const [showControls, setShowControls] = useState(true);
-  const [mapConfig, setMapConfig] = useState(DEFAULT_MAP_CONFIG);
+  const [mapConfig] = useState(DEFAULT_MAP_CONFIG);
   const [isLocked, setIsLocked] = useState(true);
 
   // ── Custom camera state ──
@@ -1672,17 +1676,33 @@ const InteractiveMap3D = () => {
   const selectedPlotRef = useRef(null);
   useEffect(() => { selectedPlotRef.current = selectedPlot; }, [selectedPlot]);
 
-  const handleColorChange = useCallback((key, value) =>
-    setMapConfig(prev => ({ ...prev, colors: { ...prev.colors, [key]: value } })), []);
-
-  const handleToggleChange = useCallback((category, key, value) =>
-    setMapConfig(prev => ({ ...prev, [category]: { ...prev[category], [key]: value } })), []);
-
   const resetCamera = useCallback(() => {
     setSelectedPlot(null);
     setIsResetting(true);
     camRef.current = { ...DEFAULT_CAM };
   }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      // If we're inside the container, ignore
+      if (canvasContainerRef.current?.contains(event.target)) return;
+      if (document.querySelector('.brand-overlay')?.contains(event.target)) return;
+      if (document.querySelector('.interaction-ribbon')?.contains(event.target)) return;
+      if (document.querySelector('.view-controls')?.contains(event.target)) return;
+      if (document.querySelector('.panel')?.contains(event.target)) return;
+
+      // If we clicked outside the map 3d container while it's unlocked, lock it
+      if (!isLocked) {
+        setIsLocked(true);
+        resetCamera();
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isLocked, resetCamera]);
 
   const handlePlotClick = useCallback((plot) => {
     if (plot.photoPin) {
@@ -1803,33 +1823,42 @@ const InteractiveMap3D = () => {
 
   return (
     <div className="map-3d-container">
-      <div className="brand-overlay">
-        <div className="brand-badge">
-          <div className="lotus-icon">
-            <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M50 20C55 35 75 40 85 50C75 60 55 65 50 80C45 65 25 60 15 50C25 40 45 35 50 20Z" stroke="#c8d96a" strokeWidth="2" />
-              <path d="M50 35C53 45 65 48 72 54C65 60 53 63 50 73C47 63 35 60 28 54C35 48 47 45 50 35Z" stroke="#c8d96a" strokeWidth="1.5" opacity="0.7" />
-              <path d="M50 10V90M10 50H90" stroke="#c8d96a" strokeWidth="0.5" opacity="0.3" />
-            </svg>
-          </div>
-          <div className="brand-names">
-            <h1 className="brand-main">SAPPHIRE</h1>
-            <h2 className="brand-sub">Farms</h2>
-          </div>
+      {mapConfig.brandOverlay?.isVisible && (
+        <div className="brand-overlay">
+          <img 
+            src={logo} 
+            alt="Sapphire" 
+            className="brand-logo-map" 
+            style={{ width: mapConfig.brandOverlay.logoWidth }}
+          />
         </div>
-      </div>
+      )}
 
       {isLocked && (
-        <div className="interaction-overlay" onClick={() => setIsLocked(false)}>
-          <div className="overlay-content">
-            <div className="overlay-icon">🖱️</div>
-            <h3>Click to Interact</h3>
-            <p>Explore the 3D map of Sapphire Farmhouse</p>
+        <div className="interaction-ribbon" onClick={() => setIsLocked(false)}>
+          <div className="ribbon-content">
+            <span className="ribbon-text">Interactive 3D Experience</span>
+            <div className="ribbon-divider"></div>
+            <div className="ribbon-main">
+              <span className="ribbon-icon">🖱️</span>
+              <span className="ribbon-cta">CLICK TO INTERACT</span>
+            </div>
+            <div className="ribbon-divider"></div>
+            <span className="ribbon-text">Sapphire Farmhouse</span>
           </div>
         </div>
       )}
 
-      <div ref={canvasContainerRef} style={{ width: '100%', height: '100%', touchAction: isLocked ? 'auto' : 'none', pointerEvents: isLocked ? 'none' : 'auto' }}>
+      <div 
+        ref={canvasContainerRef} 
+        onClick={() => { if (isLocked) setIsLocked(false); }}
+        style={{ 
+          width: '100%', 
+          height: '100%', 
+          touchAction: 'none', 
+          cursor: isLocked ? 'pointer' : 'crosshair'
+        }}
+      >
         <Canvas
           shadows
           camera={{ position: [0, 100, 50], fov: 50 }}
@@ -1903,70 +1932,7 @@ const InteractiveMap3D = () => {
             <path d="M12 8v8M8 12h8" />
           </svg>
         </button>
-        <button className={`view-btn icon-btn ${showConfig ? 'active' : ''}`} onClick={() => setShowConfig(!showConfig)} title="Map Configuration">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z" />
-            <path d="M12 8v4" /><path d="M12 16h.01" />
-          </svg>
-        </button>
       </div>
-
-      {showConfig && (
-        <div className="theme-editor-overlay">
-          <div className="theme-editor-header">
-            <h3>MAP AESTHETICS</h3>
-            <button onClick={() => setShowConfig(false)}>✕</button>
-          </div>
-          <div className="theme-editor-scroll">
-            <div className="theme-editor-section">
-              <h4>VISIBILITY</h4>
-              <div className="theme-editor-item toggle">
-                <label>PLOT BOUNDARIES</label>
-                <input
-                  type="checkbox"
-                  checked={mapConfig.plotBoundary.isVisible}
-                  onChange={(e) => handleToggleChange('plotBoundary', 'isVisible', e.target.checked)}
-                />
-              </div>
-              <div className="theme-editor-item toggle">
-                <label>CAMPUS BOUNDARY</label>
-                <input
-                  type="checkbox"
-                  checked={mapConfig.campusBoundary.isVisible}
-                  onChange={(e) => handleToggleChange('campusBoundary', 'isVisible', e.target.checked)}
-                />
-              </div>
-              <div className="theme-editor-item toggle">
-                <label>PHOTO PINS</label>
-                <input
-                  type="checkbox"
-                  checked={mapConfig.photoPinStyle.isVisible}
-                  onChange={(e) => handleToggleChange('photoPinStyle', 'isVisible', e.target.checked)}
-                />
-              </div>
-              <div className="theme-editor-item toggle">
-                <label>MATTE TEXTURE</label>
-                <input
-                  type="checkbox"
-                  checked={mapConfig.photoPinStyle.matteMode}
-                  onChange={(e) => handleToggleChange('photoPinStyle', 'matteMode', e.target.checked)}
-                />
-              </div>
-            </div>
-
-            <div className="theme-editor-section">
-              <h4>COLORS</h4>
-              {Object.entries(mapConfig.colors).map(([key, value]) => (
-                <div key={key} className="theme-editor-item">
-                  <label>{key.replace(/([A-Z])/g, ' $1').toUpperCase()}</label>
-                  <input type="color" value={value} onChange={(e) => handleColorChange(key, e.target.value)} />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
       <div className={`panel ${selectedPlot ? 'open' : ''}`}>
         <div className="panel-drag"></div>
         <div className="panel-header">
