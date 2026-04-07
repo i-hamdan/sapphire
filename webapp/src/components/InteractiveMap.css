@@ -420,6 +420,10 @@
   font-size: .9rem;
   font-weight: 500;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
 }
 .btn-secondary {
   background: transparent;
@@ -429,6 +433,9 @@
   padding: 15px 18px;
   font-size: .9rem;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .btn-close {
   background: rgba(255,255,255,.06);
