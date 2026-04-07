@@ -330,16 +330,19 @@ const ElevationBar = ({ value, min, max, onChange, reverse, width, height }) => 
 // ─────────────────────────────────────────────
 // MAIN MapControls  — assembles all widgets
 // ─────────────────────────────────────────────
-const DEFAULTS = { zoom: 112, azimuth: 0, elevation: 0.46, panX: 0, panZ: 0 };
+const range = DEFAULT_MAP_CONFIG.camera.zoomRange;
+const mappedZoom = range[0] + (DEFAULT_MAP_CONFIG.camera.defaultZoom / 100) * (range[1] - range[0]);
+
+const DEFAULTS = { zoom: mappedZoom, azimuth: 0, elevation: 0.46, panX: 0, panZ: 0 };
 
 const MapControls = ({
   camRef,
   isVisible,
-  zoomRange = [15, 250],
+  zoomRange = range,
   elevationRange = [0.15, Math.PI / 2.1],
   triggerReset = 0,
 }) => {
-  const [localCam, setLocalCam] = useState({ zoom: 112, azimuth: 0, elevation: 0.46 });
+  const [localCam, setLocalCam] = useState({ zoom: mappedZoom, azimuth: 0, elevation: 0.46 });
   const targetCam = useRef({ ...DEFAULTS, active: { zoom: false, azimuth: false, elevation: false, pan: false } });
 
   // Handle global reset trigger from parent

@@ -1655,15 +1655,18 @@ const Traffic = ({ config }) => {
 // ─────────────────────────────────────────────
 // DEFAULT CAMERA STATE
 // ─────────────────────────────────────────────
+const range = DEFAULT_MAP_CONFIG.camera.zoomRange;
+const mappedZoom = range[0] + (DEFAULT_MAP_CONFIG.camera.defaultZoom / 100) * (range[1] - range[0]);
+
 const DEFAULT_CAM = {
-  zoom: 112,         // Distance from look-at target
+  zoom: mappedZoom,  // Calculated from 0-100 config
   azimuth: 0,        // Horizontal rotation (radians)
   elevation: 0.46,   // Polar angle (radians, 0 = top-down, π/2 = flat)
   panX: 0,           // Look-at target X
   panZ: 0,           // Look-at target Z
 };
 
-const ZOOM_RANGE = [15, 250];
+const ZOOM_RANGE = range;
 const ELEVATION_RANGE = [0.15, Math.PI / 2.1];
 
 // ─────────────────────────────────────────────

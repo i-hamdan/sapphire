@@ -117,6 +117,10 @@ export const DEFAULT_MAP_CONFIG = {
     reverseTilt: true,        // Default up tilts up
     reversePan: true,         // Default drag right moves right
   },
+  camera: {
+    defaultZoom: 65,           // 0 (tight) to 100 (wide)
+    zoomRange: [15, 250],      // Internal mapping range
+  },
   cameraControlUI: {
     tiltWidth: 44,
     tiltHeight: 50,
