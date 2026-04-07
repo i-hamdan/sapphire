@@ -14,6 +14,7 @@ import iconROI from './assets/amenities/high investment returns.png'
 import iconGazebos from './assets/amenities/seating gazebos and benches.png'
 import iconLamps from './assets/amenities/street side lamps.png'
 import iconAvenues from './assets/amenities/tree lines avenues.png'
+import iconPhone from './assets/telephone.png'
 
 const WhatsAppIcon = () => (
   <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
@@ -123,7 +124,7 @@ function App() {
         <div className="hero-overlay"></div>
         <div className="hero-content">
           <img src={logo} alt="Sapphire Logo" className="hero-logo" />
-          <h1>Experience Luxury Living</h1>
+          <h1>Experience <br /> <span className="highlight">Luxury</span> Living</h1>
           <p>Discover your dream farmhouse at Sapphire – where nature meets elegance.</p>
           <div 
             className="scroll-hint" 
@@ -150,12 +151,40 @@ function App() {
                 <div className="amenity-icon">
                   <img src={item.icon} alt={item.title} />
                 </div>
-                <h3>{item.title}</h3>
               </div>
             ))}
           </div>
         </section>
+
+        <section className="contact-cta-section">
+          <div className="cta-inner">
+            <h2 className="cta-title">Build Your Legacy at <br /> Sapphire Farms</h2>
+            <p className="cta-desc">
+              Ready to explore our luxury farmhouses? Our team is here to help you 
+              find your perfect plot and start your journey today.
+            </p>
+            <div className="cta-actions">
+              <a 
+                href="https://api.whatsapp.com/send?phone=919644271804&text=I'm interested in Sapphire Farms. Can I get more details?" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="btn-cta btn-whatsapp-cta"
+              >
+                <WhatsAppIcon />
+                <span>WhatsApp Us</span>
+              </a>
+              <a href="tel:+919644271804" className="btn-cta btn-call-cta">
+                <img src={iconPhone} alt="" className="cta-icon-img" />
+                <span>Call Now</span>
+              </a>
+            </div>
+          </div>
+        </section>
       </main>
+
+      <footer className="main-footer">
+        <p>Managed by <span className="realty-brand">Nextron Realty</span></p>
+      </footer>
     </div>
   )
 }
