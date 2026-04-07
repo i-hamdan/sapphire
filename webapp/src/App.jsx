@@ -151,6 +151,7 @@ function App() {
                 <div className="amenity-icon">
                   <img src={item.icon} alt={item.title} />
                 </div>
+                <h3>{item.title}</h3>
               </div>
             ))}
           </div>
