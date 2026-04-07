@@ -40,34 +40,22 @@ export const SoldSign = ({ scale = 1 }) => {
           <meshStandardMaterial color="#ffffff" roughness={0.5} />
         </mesh>
         
-        {/* Red Banner Overlay */}
+        {/* Red Banner Overlay (Covering full board) */}
         <mesh position={[0, 0, -0.032]} rotation={[0, Math.PI, 0]} castShadow>
-          <boxGeometry args={[1.6, 0.25, 0.01]} />
+          <boxGeometry args={[1.6, 0.6, 0.01]} />
           <meshStandardMaterial color="#d32f2f" />
         </mesh>
 
-        {/* Text */}
+        {/* Giant SOLD Text */}
         <Text
           position={[0, 0, -0.04]}
           rotation={[0, Math.PI, 0]}
-          fontSize={0.16}
+          fontSize={0.4}
           color="white"
           anchorX="center"
           anchorY="middle"
         >
-          PROPERTY SOLD
-        </Text>
-        
-        <Text
-          position={[0, -0.18, -0.04]}
-          rotation={[0, Math.PI, 0]}
-          fontSize={0.08}
-          color="#1a1a1a"
-          anchorX="center"
-          anchorY="middle"
-          opacity={0.8}
-        >
-          SAPPHIRE FARMS
+          SOLD
         </Text>
       </group>
     </group>
