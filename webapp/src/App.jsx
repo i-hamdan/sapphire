@@ -3,6 +3,7 @@ import InteractiveMap3D from './components/InteractiveMap3D'
 import plotDetails from './assets/plot_details.json'
 import './App.css'
 import heroVideo from './assets/hero-bg.mp4'
+import coverPhoto from './assets/cover_photo.webp'
 import logo from './assets/logos/transparent_logo.png'
 import { getWhatsAppLink, getCallLink } from './config'
 
@@ -118,6 +119,7 @@ function App() {
           muted 
           loop 
           playsInline 
+          poster={coverPhoto}
           className="hero-video"
         >
           <source src={heroVideo} type="video/mp4" />
