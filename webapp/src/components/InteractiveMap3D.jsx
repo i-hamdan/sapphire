@@ -20,6 +20,7 @@ import { PanoramaViewer } from './PanoramaViewer';
 import './InteractiveMap.css'
 import logo from '../assets/logos/transparent_logo.png';
 import iconPhone from '../assets/telephone.png';
+import { getWhatsAppLink, getCallLink } from '../config';
 
 const WhatsAppIcon = () => (
   <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
@@ -2032,14 +2033,14 @@ const InteractiveMap3D = () => {
         </div>
         <div className="cta-row">
           <a
-            href={`https://api.whatsapp.com/send?phone=919644271804&text=${encodeURIComponent(`I'm interested in Farm ${selectedPlot ? selectedPlot.id_num : ''}`)}`}
+            href={getWhatsAppLink(`I'm interested in Farm ${selectedPlot ? selectedPlot.id_num : ''}`)}
             target="_blank" rel="noopener noreferrer"
             className="btn-primary" style={{ textDecoration: 'none', textAlign: 'center' }}
           >
             <WhatsAppIcon />
             Enquire Now
           </a>
-          <a href="tel:+919644271804" className="btn-secondary" style={{ textDecoration: 'none' }}>
+          <a href={getCallLink()} className="btn-secondary" style={{ textDecoration: 'none' }}>
             <img src={iconPhone} alt="Call" style={{ width: '24px', height: '24px', objectFit: 'contain' }} />
           </a>
         </div>

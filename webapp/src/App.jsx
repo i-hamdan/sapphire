@@ -4,6 +4,7 @@ import plotDetails from './assets/plot_details.json'
 import './App.css'
 import heroVideo from './assets/hero-bg.mp4'
 import logo from './assets/logos/transparent_logo.png'
+import { getWhatsAppLink, getCallLink } from './config'
 
 // Amenities Icons
 import iconSecurity from './assets/amenities/247 security.png'
@@ -85,7 +86,7 @@ function PlotTable() {
                   <td>
                     {!details.isSold && (
                       <a 
-                        href={`https://api.whatsapp.com/send?phone=919644271804&text=${encodeURIComponent(`I'm interested in Farm ${pid}`)}`}
+                        href={getWhatsAppLink(`I'm interested in Farm ${pid}`)}
                         target="_blank" 
                         rel="noopener noreferrer" 
                         className="chat-btn"
@@ -166,7 +167,7 @@ function App() {
             </p>
             <div className="cta-actions">
               <a 
-                href="https://api.whatsapp.com/send?phone=919644271804&text=I'm interested in Sapphire Farms. Can I get more details?" 
+                href={getWhatsAppLink("I'm interested in Sapphire Farms. Can I get more details?")} 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="btn-cta btn-whatsapp-cta"
@@ -174,7 +175,7 @@ function App() {
                 <WhatsAppIcon />
                 <span>WhatsApp Us</span>
               </a>
-              <a href="tel:+919644271804" className="btn-cta btn-call-cta">
+              <a href={getCallLink()} className="btn-cta btn-call-cta">
                 <img src={iconPhone} alt="" className="cta-icon-img" />
                 <span>Call Now</span>
               </a>
